@@ -1,0 +1,39 @@
+2025-09-16 12:02:59.898 UTC [26128] LOG:  starting PostgreSQL 15.14 on x86_64-pc-linux-gnu, compiled by clang version 19.1.7, 64-bit
+2025-09-16 12:02:59.898 UTC [26128] LOG:  could not bind IPv6 address "::1": Address already in use
+2025-09-16 12:02:59.898 UTC [26128] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2025-09-16 12:02:59.898 UTC [26128] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
+2025-09-16 12:02:59.898 UTC [26128] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2025-09-16 12:02:59.898 UTC [26128] WARNING:  could not create listen socket for "localhost"
+2025-09-16 12:02:59.898 UTC [26128] FATAL:  could not create any TCP/IP sockets
+2025-09-16 12:02:59.900 UTC [26128] LOG:  database system is shut down
+2025-09-16 12:11:42.248 UTC [29649] LOG:  starting PostgreSQL 15.13 on x86_64-pc-linux-gnu, compiled by clang version 19.1.7, 64-bit
+2025-09-16 12:11:42.249 UTC [29649] LOG:  could not bind IPv6 address "::1": Address already in use
+2025-09-16 12:11:42.249 UTC [29649] HINT:  Is another postmaster already running on port 5433? If not, wait a few seconds and retry.
+2025-09-16 12:11:42.249 UTC [29649] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
+2025-09-16 12:11:42.249 UTC [29649] HINT:  Is another postmaster already running on port 5433? If not, wait a few seconds and retry.
+2025-09-16 12:11:42.249 UTC [29649] WARNING:  could not create listen socket for "localhost"
+2025-09-16 12:11:42.249 UTC [29649] FATAL:  could not create any TCP/IP sockets
+2025-09-16 12:11:42.254 UTC [29649] LOG:  database system is shut down
+2025-09-16 12:12:01.189 UTC [29960] LOG:  starting PostgreSQL 15.13 on x86_64-pc-linux-gnu, compiled by clang version 19.1.7, 64-bit
+2025-09-16 12:12:01.190 UTC [29960] LOG:  listening on IPv6 address "::1", port 5434
+2025-09-16 12:12:01.190 UTC [29960] LOG:  listening on IPv4 address "127.0.0.1", port 5434
+2025-09-16 12:12:01.192 UTC [29960] FATAL:  could not create lock file "/run/postgresql/.s.PGSQL.5434.lock": Permission denied
+2025-09-16 12:12:01.195 UTC [29960] LOG:  database system is shut down
+2025-09-16 12:12:41.566 UTC [30476] LOG:  starting PostgreSQL 15.13 on x86_64-pc-linux-gnu, compiled by clang version 19.1.7, 64-bit
+2025-09-16 12:12:41.567 UTC [30476] LOG:  listening on IPv6 address "::1", port 5434
+2025-09-16 12:12:41.567 UTC [30476] LOG:  listening on IPv4 address "127.0.0.1", port 5434
+2025-09-16 12:12:41.568 UTC [30476] LOG:  listening on Unix socket "/srv/luminous-dynamics/terra-atlas-mvp/postgres-data/.s.PGSQL.5434"
+2025-09-16 12:12:41.573 UTC [30479] LOG:  database system was shut down at 2025-09-16 12:02:59 UTC
+2025-09-16 12:12:41.578 UTC [30476] LOG:  database system is ready to accept connections
+2025-09-16 12:14:10.116 UTC [31273] FATAL:  role "luminous" does not exist
+2025-09-16 12:14:10.118 UTC [31279] FATAL:  role "luminous" does not exist
+2025-09-16 12:14:25.897 UTC [31532] ERROR:  extension "postgis" is not available
+2025-09-16 12:14:25.897 UTC [31532] DETAIL:  Could not open extension control file "/nix/store/mms92x9iwrgksmfr9phicfs35pdcmk0k-postgresql-15.13/share/postgresql/extension/postgis.control": No such file or directory.
+2025-09-16 12:14:25.897 UTC [31532] HINT:  The extension must first be installed on the system where PostgreSQL is running.
+2025-09-16 12:14:25.897 UTC [31532] STATEMENT:  CREATE EXTENSION IF NOT EXISTS postgis;
+2025-09-16 12:17:41.671 UTC [30477] LOG:  checkpoint starting: time
+2025-09-16 12:19:23.661 UTC [30477] LOG:  checkpoint complete: wrote 1020 buffers (6.2%); 0 WAL file(s) added, 0 removed, 0 recycled; write=101.792 s, sync=0.095 s, total=101.990 s; sync files=368, longest=0.075 s, average=0.001 s; distance=4942 kB, estimate=4942 kB
+2025-09-16 13:02:42.538 UTC [30477] LOG:  checkpoint starting: time
+2025-09-16 13:02:53.857 UTC [30477] LOG:  checkpoint complete: wrote 112 buffers (0.7%); 0 WAL file(s) added, 0 removed, 0 recycled; write=11.129 s, sync=0.103 s, total=11.319 s; sync files=83, longest=0.082 s, average=0.002 s; distance=566 kB, estimate=4504 kB
+2025-09-16 23:22:54.330 UTC [30477] LOG:  checkpoint starting: time
+2025-09-16 23:22:55.534 UTC [30477] LOG:  checkpoint complete: wrote 12 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=1.104 s, sync=0.005 s, total=1.204 s; sync files=12, longest=0.002 s, average=0.001 s; distance=29 kB, estimate=4057 kB
