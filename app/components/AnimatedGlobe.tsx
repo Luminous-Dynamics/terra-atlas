@@ -93,34 +93,93 @@ export default function AnimatedGlobe() {
     // Earth with better textures
     const geometry = new THREE.SphereGeometry(1, 64, 64);
     
-    // Load Earth texture
+    // Create Earth with procedural texture instead of loading external
     const textureLoader = new THREE.TextureLoader();
-    const earthTexture = textureLoader.load(
-      'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg',
-      () => {},
-      undefined,
-      () => {
-        // Fallback to gradient if texture fails
-        const canvas = document.createElement('canvas');
-        canvas.width = 512;
-        canvas.height = 256;
-        const ctx = canvas.getContext('2d')!;
-        const gradient = ctx.createLinearGradient(0, 0, 512, 256);
-        gradient.addColorStop(0, '#1e3c72');
-        gradient.addColorStop(0.5, '#2a5298');
-        gradient.addColorStop(1, '#1e3c72');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 512, 256);
-        const fallbackTexture = new THREE.CanvasTexture(canvas);
-        material.map = fallbackTexture;
-      }
-    );
+    
+    // Create a proper Earth texture with continents
+    const canvas = document.createElement('canvas');
+    canvas.width = 2048;
+    canvas.height = 1024;
+    const ctx = canvas.getContext('2d')!;
+    
+    // Create ocean base
+    const oceanGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    oceanGradient.addColorStop(0, '#0a2342');
+    oceanGradient.addColorStop(0.5, '#1e4d8b');
+    oceanGradient.addColorStop(1, '#0a2342');
+    ctx.fillStyle = oceanGradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Add some texture variation to ocean
+    for (let i = 0; i < 100; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const radius = Math.random() * 50 + 10;
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      gradient.addColorStop(0, 'rgba(30, 77, 139, 0.2)');
+      gradient.addColorStop(1, 'rgba(30, 77, 139, 0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+    
+    // Draw continents (simplified shapes, but more realistic)
+    ctx.fillStyle = '#2d5016';
+    
+    // Africa
+    ctx.beginPath();
+    ctx.ellipse(1100, 500, 150, 220, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Europe
+    ctx.beginPath();
+    ctx.ellipse(1050, 250, 100, 80, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Asia
+    ctx.beginPath();
+    ctx.ellipse(1400, 300, 250, 180, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // North America
+    ctx.beginPath();
+    ctx.ellipse(500, 300, 180, 200, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // South America
+    ctx.beginPath();
+    ctx.ellipse(600, 650, 100, 180, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Australia
+    ctx.beginPath();
+    ctx.ellipse(1500, 700, 80, 60, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Antarctica
+    ctx.fillStyle = '#e0e0e0';
+    ctx.fillRect(0, 950, canvas.width, 74);
+    
+    // Add some detail to continents
+    ctx.fillStyle = 'rgba(45, 80, 22, 0.5)';
+    for (let i = 0; i < 50; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const radius = Math.random() * 20 + 5;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    const earthTexture = new THREE.CanvasTexture(canvas);
+    earthTexture.needsUpdate = true;
 
     const material = new THREE.MeshPhongMaterial({
       map: earthTexture,
       bumpScale: 0.05,
       specular: new THREE.Color(0x333333),
-      shininess: 10
+      shininess: 15,
+      emissive: new THREE.Color(0x001122),
+      emissiveIntensity: 0.1
     });
 
     const earth = new THREE.Mesh(geometry, material);
