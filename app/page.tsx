@@ -10,6 +10,9 @@ import { useUSACEDams } from './hooks/useUSACEDams'
 // Dynamic import for Three.js components
 const AnimatedGlobe = dynamic(() => import('./components/AnimatedGlobe'), { ssr: false })
 const GlobeReliable = dynamic(() => import('./components/GlobeReliable'), { ssr: false })
+const RealTimeUpdates = dynamic(() => import('./components/RealTimeUpdates').then(mod => ({ default: mod.RealTimeUpdates })), { ssr: false })
+const LiveActivityIndicator = dynamic(() => import('./components/RealTimeUpdates').then(mod => ({ default: mod.LiveActivityIndicator })), { ssr: false })
+const PriceTicker = dynamic(() => import('./components/RealTimeUpdates').then(mod => ({ default: mod.PriceTicker })), { ssr: false })
 
 // Animated counter component
 function AnimatedCounter({ value, prefix = '', suffix = '', decimals = 0 }: { value: number; prefix?: string; suffix?: string; decimals?: number }) {
@@ -160,6 +163,11 @@ export default function Homepage() {
         </div>
       </motion.header>
 
+      {/* Price Ticker */}
+      <div className="fixed top-[73px] left-0 right-0 z-40">
+        <PriceTicker />
+      </div>
+
       {/* Hero Section with Enhanced Globe */}
       <section className="relative min-h-screen flex items-center justify-center pt-20">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-900/10 to-blue-900/20"></div>
@@ -302,6 +310,11 @@ export default function Homepage() {
             <p className="text-xl text-gray-400">
               Watch as our platform transforms the energy landscape
             </p>
+            
+            {/* Live Activity Indicator */}
+            <div className="mt-6 flex justify-center">
+              <LiveActivityIndicator />
+            </div>
           </motion.div>
 
           <div className="grid md:grid-cols-4 gap-6">
@@ -586,7 +599,7 @@ export default function Homepage() {
                 </div>
               </div>
 
-              {/* Right Visual */}
+              {/* Right Visual - Replace with Real-Time Updates */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 whileInView={{ opacity: 1, scale: 1 }}
@@ -594,37 +607,7 @@ export default function Homepage() {
                 transition={{ duration: 0.8 }}
                 className="relative"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 blur-3xl"></div>
-                <div className="relative bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10">
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="bg-white/5 rounded-lg p-4">
-                      <div className="text-sm text-gray-400 mb-1">Solar Irradiance</div>
-                      <div className="text-2xl font-bold text-yellow-400">5.8 kWh/m²</div>
-                    </div>
-                    <div className="bg-white/5 rounded-lg p-4">
-                      <div className="text-sm text-gray-400 mb-1">Wind Speed</div>
-                      <div className="text-2xl font-bold text-blue-400">7.2 m/s</div>
-                    </div>
-                  </div>
-                  <div className="h-48 bg-gradient-to-t from-blue-500/20 to-transparent rounded-lg relative overflow-hidden">
-                    {/* Animated chart bars */}
-                    {[...Array(12)].map((_, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ height: 0 }}
-                        animate={{ height: `${Math.random() * 100}%` }}
-                        transition={{
-                          duration: 2,
-                          delay: i * 0.1,
-                          repeat: Infinity,
-                          repeatType: 'reverse'
-                        }}
-                        className="absolute bottom-0 w-6 bg-gradient-to-t from-blue-500 to-purple-500 opacity-50"
-                        style={{ left: `${i * 8.33}%` }}
-                      />
-                    ))}
-                  </div>
-                </div>
+                <RealTimeUpdates />
               </motion.div>
             </div>
           </motion.div>
