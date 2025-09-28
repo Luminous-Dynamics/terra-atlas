@@ -8,6 +8,7 @@ import { ArrowRight, Globe, DollarSign, Users, Zap, Shield, TrendingUp, Map, Bar
 
 // Dynamic import for Three.js components
 const AnimatedGlobe = dynamic(() => import('./components/AnimatedGlobe'), { ssr: false })
+const GlobeReliable = dynamic(() => import('./components/GlobeReliable'), { ssr: false })
 
 // Animated counter component
 function AnimatedCounter({ value, prefix = '', suffix = '', decimals = 0 }: { value: number; prefix?: string; suffix?: string; decimals?: number }) {
