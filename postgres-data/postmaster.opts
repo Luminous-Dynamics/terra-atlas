@@ -1,1 +1,1 @@
-/nix/store/mms92x9iwrgksmfr9phicfs35pdcmk0k-postgresql-15.13/bin/postgres "-D" "postgres-data"
+/nix/store/4kx8cxhn8696aaw7iknmsj184dvq9x8a-postgresql-15.14/bin/postgres "-D" "/srv/luminous-dynamics/terra-atlas-mvp/postgres-data"

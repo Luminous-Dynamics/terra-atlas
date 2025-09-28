@@ -37,3 +37,15 @@
 2025-09-16 13:02:53.857 UTC [30477] LOG:  checkpoint complete: wrote 112 buffers (0.7%); 0 WAL file(s) added, 0 removed, 0 recycled; write=11.129 s, sync=0.103 s, total=11.319 s; sync files=83, longest=0.082 s, average=0.002 s; distance=566 kB, estimate=4504 kB
 2025-09-16 23:22:54.330 UTC [30477] LOG:  checkpoint starting: time
 2025-09-16 23:22:55.534 UTC [30477] LOG:  checkpoint complete: wrote 12 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=1.104 s, sync=0.005 s, total=1.204 s; sync files=12, longest=0.002 s, average=0.001 s; distance=29 kB, estimate=4057 kB
+2025-09-25 18:17:07.183 UTC [727656] LOG:  starting PostgreSQL 15.14 on x86_64-pc-linux-gnu, compiled by clang version 19.1.7, 64-bit
+2025-09-25 18:17:07.184 UTC [727656] LOG:  listening on IPv6 address "::1", port 5434
+2025-09-25 18:17:07.184 UTC [727656] LOG:  listening on IPv4 address "127.0.0.1", port 5434
+2025-09-25 18:17:07.186 UTC [727656] LOG:  listening on Unix socket "/srv/luminous-dynamics/terra-atlas-mvp/postgres-data/.s.PGSQL.5434"
+2025-09-25 18:17:07.190 UTC [727659] LOG:  database system was interrupted; last known up at 2025-09-16 23:22:55 UTC
+2025-09-25 18:17:07.292 UTC [727659] LOG:  database system was not properly shut down; automatic recovery in progress
+2025-09-25 18:17:07.294 UTC [727659] LOG:  redo starts at 0/1A71EB0
+2025-09-25 18:17:07.294 UTC [727659] LOG:  invalid record length at 0/1A71F98: wanted 24, got 0
+2025-09-25 18:17:07.294 UTC [727659] LOG:  redo done at 0/1A71F60 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+2025-09-25 18:17:07.298 UTC [727657] LOG:  checkpoint starting: end-of-recovery immediate wait
+2025-09-25 18:17:07.320 UTC [727657] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.009 s, sync=0.002 s, total=0.024 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB
+2025-09-25 18:17:07.328 UTC [727656] LOG:  database system is ready to accept connections

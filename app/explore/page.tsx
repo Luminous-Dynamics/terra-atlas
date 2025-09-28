@@ -35,15 +35,15 @@ export default function ExplorePage() {
     setLoading(true)
     try {
       const type = filter === 'all' ? '' : `type=${filter}&`
-      const response = await fetch(`/api/discovery/projects?${type}limit=500`)
+      const response = await fetch(`/api/projects?${type}limit=500`)
       const data = await response.json()
       
-      // Add location data for visualization
+      // Use real location data from database
       const projectsWithLocation = data.projects?.map((p: any) => ({
         ...p,
         location: {
-          lat: 39.8283 + (Math.random() - 0.5) * 30, // Center on US
-          lon: -98.5795 + (Math.random() - 0.5) * 50
+          lat: p.latitude || 39.8283 + (Math.random() - 0.5) * 30,
+          lon: p.longitude || -98.5795 + (Math.random() - 0.5) * 50
         }
       })) || []
       
@@ -149,9 +149,12 @@ export default function ExplorePage() {
                 <p className="text-white/60">Investment: <span className="text-cyan-400">${(selectedProject.investment / 1000000).toFixed(1)}M</span></p>
                 <p className="text-white/60">Status: <span className="text-yellow-400">{selectedProject.status}</span></p>
               </div>
-              <button className="mt-4 w-full px-3 py-2 bg-purple-500/20 border border-purple-500/50 rounded-lg text-purple-400 hover:bg-purple-500/30 transition">
+              <Link 
+                href={`/project/${selectedProject.id}`}
+                className="mt-4 w-full px-3 py-2 bg-purple-500/20 border border-purple-500/50 rounded-lg text-purple-400 hover:bg-purple-500/30 transition inline-block text-center"
+              >
                 View Details
-              </button>
+              </Link>
             </div>
           )}
         </div>

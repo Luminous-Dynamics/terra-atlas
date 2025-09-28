@@ -1,4 +1,8 @@
-# Terra Atlas 🌍
+# 🌍 Terra Atlas MVP - The ONE Unified Version
+
+## ⚠️ IMPORTANT: This is THE version we work on!
+
+**Stop creating new demos!** This is the main Terra Atlas with the 3D globe that you liked. All improvements should be made HERE, not in new files.
 
 > Democratizing Global Energy Investment - 4M+ Renewable Opportunities Worldwide
 
