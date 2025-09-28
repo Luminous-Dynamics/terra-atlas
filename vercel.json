@@ -9,11 +9,6 @@
     "silent": true
   },
   "regions": ["iad1"],
-  "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role"
-  },
   "functions": {
     "app/api/auth/register-drizzle/route.ts": {
       "maxDuration": 10
