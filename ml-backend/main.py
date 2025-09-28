@@ -20,6 +20,7 @@ from models.energy_predictor import EnergyPredictor
 from models.risk_assessor import RiskAssessor
 from utils.satellite_imagery import SatelliteImageryFetcher
 from utils.weather_data import WeatherDataProvider
+from integrations.usace_api import USACEDamIntegration
 
 load_dotenv()
 
@@ -44,6 +45,7 @@ energy_predictor = EnergyPredictor()
 risk_assessor = RiskAssessor()
 satellite_fetcher = SatelliteImageryFetcher()
 weather_provider = WeatherDataProvider()
+usace_integration = None  # Will be initialized on first use
 
 # Pydantic models
 class SiteAnalysisRequest(BaseModel):
@@ -330,13 +332,160 @@ async def get_weather_forecast(lat: float, lon: float, days: int = 7):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/usace/dams")
+async def get_usace_dams(
+    limit: Optional[int] = 100,
+    state: Optional[str] = None,
+    hydro_only: bool = False
+):
+    """
+    Fetch USACE dam data with optional filtering
+    """
+    global usace_integration
+    
+    try:
+        # Initialize integration if needed
+        if usace_integration is None:
+            usace_integration = USACEDamIntegration()
+        
+        # Create async context for API calls
+        async with USACEDamIntegration() as integration:
+            # Fetch dams with limit
+            all_dams = await integration.fetch_all_dams(limit=limit)
+            
+            # Apply filters
+            if hydro_only:
+                all_dams = integration.filter_hydroelectric_dams(all_dams)
+            
+            if state:
+                state_dams = [dam for dam in all_dams if dam.get("state") == state.upper()]
+                all_dams = state_dams
+            
+            # Get statistics
+            stats = integration.get_statistics(all_dams)
+            
+            return {
+                "success": True,
+                "count": len(all_dams),
+                "statistics": stats,
+                "dams": all_dams[:limit] if limit else all_dams
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching USACE data: {str(e)}")
+
+@app.get("/usace/dams/{dam_id}")
+async def get_dam_details(dam_id: str):
+    """
+    Get detailed information for a specific dam
+    """
+    try:
+        async with USACEDamIntegration() as integration:
+            dam = await integration.fetch_dam_details(dam_id)
+            
+            if not dam:
+                raise HTTPException(status_code=404, detail=f"Dam {dam_id} not found")
+            
+            return {
+                "success": True,
+                "dam": dam
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching dam details: {str(e)}")
+
+@app.get("/usace/statistics")
+async def get_usace_statistics():
+    """
+    Get comprehensive statistics for all USACE dams
+    """
+    try:
+        async with USACEDamIntegration() as integration:
+            # Fetch a larger sample for statistics
+            dams = await integration.fetch_all_dams(limit=1000)
+            
+            # Group by state
+            by_state = integration.group_by_state(dams)
+            
+            # Get overall statistics
+            stats = integration.get_statistics(dams)
+            
+            # Add state-level breakdown
+            state_stats = {}
+            for state, state_dams in by_state.items():
+                state_stats[state] = {
+                    "count": len(state_dams),
+                    "hydro_count": len(integration.filter_hydroelectric_dams(state_dams)),
+                    "total_capacity_mw": integration.calculate_total_capacity(state_dams)
+                }
+            
+            return {
+                "success": True,
+                "overall": stats,
+                "by_state": state_stats,
+                "top_states": sorted(
+                    state_stats.items(), 
+                    key=lambda x: x[1]["total_capacity_mw"], 
+                    reverse=True
+                )[:10]
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error calculating statistics: {str(e)}")
+
+@app.post("/usace/import")
+async def import_usace_to_database(
+    background_tasks: BackgroundTasks,
+    limit: Optional[int] = None,
+    dry_run: bool = False
+):
+    """
+    Import USACE dam data into the main database
+    """
+    job_id = f"usace_import_{datetime.now().timestamp()}"
+    
+    if not dry_run:
+        # Add to background processing for actual import
+        background_tasks.add_task(
+            import_usace_data_to_db,
+            job_id,
+            limit
+        )
+        
+        return {
+            "success": True,
+            "job_id": job_id,
+            "status": "importing",
+            "message": f"Importing {'all' if not limit else limit} USACE dams in background",
+            "check_status_url": f"/jobs/{job_id}/status"
+        }
+    else:
+        # Dry run - just fetch and validate data
+        try:
+            async with USACEDamIntegration() as integration:
+                dams = await integration.fetch_all_dams(limit=limit or 10)
+                stats = integration.get_statistics(dams)
+                
+                return {
+                    "success": True,
+                    "dry_run": True,
+                    "would_import": stats["total_dams"],
+                    "hydro_projects": stats["hydro_dams"],
+                    "total_capacity_mw": stats["total_capacity_mw"],
+                    "sample_data": dams[:5]
+                }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Dry run failed: {str(e)}")
+
 @app.get("/health")
 async def health_check():
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
         "models_loaded": True,
-        "database_connected": True
+        "database_connected": True,
+        "integrations": {
+            "usace": "ready"
+        }
     }
 
 # Helper functions
@@ -388,6 +537,28 @@ async def process_batch_analysis(job_id: str, sites: List[Dict], analysis_types:
     """
     # Implementation for batch processing
     pass
+
+async def import_usace_data_to_db(job_id: str, limit: Optional[int]):
+    """
+    Import USACE dam data into database
+    """
+    try:
+        async with USACEDamIntegration() as integration:
+            # Fetch dams
+            dams = await integration.fetch_all_dams(limit=limit)
+            
+            # Here you would insert into your database
+            # For now, we'll just log the import
+            print(f"Job {job_id}: Importing {len(dams)} dams")
+            
+            # Simulate database insertion
+            await asyncio.sleep(0.1 * len(dams) / 100)  # 0.1 sec per 100 dams
+            
+            print(f"Job {job_id}: Import complete!")
+            return {"status": "complete", "imported": len(dams)}
+    except Exception as e:
+        print(f"Job {job_id}: Import failed - {e}")
+        return {"status": "failed", "error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn

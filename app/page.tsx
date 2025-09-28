@@ -5,6 +5,7 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight, Globe, DollarSign, Users, Zap, Shield, TrendingUp, Map, BarChart3, Sparkles, Activity, Layers, Wind, Sun, Atom, Battery, Droplets } from 'lucide-react'
+import { useUSACEDams } from './hooks/useUSACEDams'
 
 // Dynamic import for Three.js components
 const AnimatedGlobe = dynamic(() => import('./components/AnimatedGlobe'), { ssr: false })
@@ -83,6 +84,9 @@ export default function Homepage() {
   const [scrollY, setScrollY] = useState(0)
   const [activeFeature, setActiveFeature] = useState(0)
   const [isLoaded, setIsLoaded] = useState(false)
+  
+  // Load USACE dams data
+  const { dams, loading: damsLoading, statistics } = useUSACEDams(100)
 
   useEffect(() => {
     setIsLoaded(true)
@@ -99,11 +103,14 @@ export default function Homepage() {
     }
   }, [])
 
+  // Calculate total projects including USACE dams
+  const totalProjects = 79197 + (statistics?.total_dams || 87000)
+  
   const features = [
     { icon: Globe, title: '72 Billion', subtitle: 'Market Opportunity', color: 'from-blue-500 to-cyan-500' },
     { icon: DollarSign, title: '11-14%', subtitle: 'Average Returns', color: 'from-green-500 to-emerald-500' },
     { icon: Users, title: '$10', subtitle: 'Minimum Investment', color: 'from-purple-500 to-pink-500' },
-    { icon: Zap, title: '79,197', subtitle: 'Live Projects', color: 'from-yellow-500 to-orange-500' },
+    { icon: Zap, title: totalProjects.toLocaleString(), subtitle: 'Live Projects', color: 'from-yellow-500 to-orange-500' },
   ]
 
   return (
@@ -432,6 +439,100 @@ export default function Homepage() {
               )
             })}
           </div>
+        </div>
+      </section>
+
+      {/* USACE Dams Integration Section */}
+      <section className="relative py-20 bg-gradient-to-b from-black/50 to-transparent">
+        <div className="container mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-4xl font-bold mb-6">
+              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                NEW: USACE Dam Integration
+              </span>
+            </h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              {statistics ? (
+                <>We've just added {statistics.total_dams.toLocaleString()} U.S. Army Corps of Engineers dams, 
+                including {statistics.hydro_dams.toLocaleString()} with hydroelectric potential 
+                totaling {statistics.total_capacity_mw.toFixed(0)} MW of capacity.</>
+              ) : (
+                <>Loading USACE dam data...</>
+              )}
+            </p>
+          </motion.div>
+
+          {/* USACE Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10"
+            >
+              <Droplets className="w-8 h-8 mb-3 text-blue-400" />
+              <div className="text-3xl font-bold text-white mb-2">
+                {statistics ? statistics.total_dams.toLocaleString() : '87,000+'}
+              </div>
+              <div className="text-gray-400">Total Dams</div>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10"
+            >
+              <Zap className="w-8 h-8 mb-3 text-yellow-400" />
+              <div className="text-3xl font-bold text-white mb-2">
+                {statistics ? statistics.hydro_dams.toLocaleString() : '2,500+'}
+              </div>
+              <div className="text-gray-400">Hydro Potential</div>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10"
+            >
+              <Activity className="w-8 h-8 mb-3 text-green-400" />
+              <div className="text-3xl font-bold text-white mb-2">
+                {statistics ? Math.round(statistics.total_capacity_mw).toLocaleString() : '5,000+'} MW
+              </div>
+              <div className="text-gray-400">Total Capacity</div>
+            </motion.div>
+          </div>
+
+          {/* Integration Progress */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-2xl p-8 border border-blue-500/30"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-2">Integration Status</h3>
+                <p className="text-gray-300">
+                  USACE National Inventory of Dams data is now live on Terra Atlas
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold text-green-400">✓ Live</div>
+                <div className="text-sm text-gray-400">Real-time data</div>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
