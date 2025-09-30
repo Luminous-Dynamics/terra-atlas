@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 
-// Dynamic import for BRAND NEW custom Three.js globe - completely fresh component
+// Dynamic import for professional Three.js globe with error handling
 const TerraGlobe = dynamic(
-  () => import('../components/EarthGlobeCustom'),
+  () => import('../components/ProfessionalGlobe'),
   {
     ssr: false,
     loading: () => (
