@@ -267,8 +267,13 @@ export default function TerraGlobeThree({ projects: initialProjects }: TerraGlob
     <div
       ref={containerRef}
       className="absolute inset-0 w-full h-full"
-      style={{ cursor: 'grab' }}
+      style={{ cursor: 'grab', border: '5px solid lime' }}
     >
+      {/* VERIFICATION MARKER - Remove after confirming deployment */}
+      <div className="absolute top-4 left-4 bg-lime-500 text-black px-4 py-2 rounded font-bold z-50">
+        ✅ CUSTOM THREE.JS GLOBE v2
+      </div>
+
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center text-white">
           <div className="text-center">
