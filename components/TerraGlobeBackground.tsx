@@ -322,16 +322,22 @@ export default function TerraGlobeBackground() {
         }
       })
       
-      // Beautiful, calm Earth with natural atmosphere
-      // Using exact working URLs from three-globe repository examples
+      // Beautiful Earth with natural atmosphere
+      // Try multiple texture sources for reliability
+      const textureUrls = {
+        // Primary: vasturiano's working examples
+        earth: 'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-blue-marble.jpg',
+        topology: 'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-topology.png'
+      }
+
       const globe = Globe()(globeEl.current)
-        .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg') // Official example texture
-        .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png') // Official example topology
+        .globeImageUrl(textureUrls.earth) // Direct GitHub raw URL
+        .bumpImageUrl(textureUrls.topology) // Direct GitHub raw URL
         .backgroundImageUrl(null) // Clean space background
         .backgroundColor('rgba(0, 0, 0, 0)') // Transparent
         .showAtmosphere(true)
-        .atmosphereColor('#4a90e2') // Calm, natural blue atmosphere like real Earth
-        .atmosphereAltitude(0.15) // Subtle, realistic atmosphere glow
+        .atmosphereColor('#4a90e2') // Calm, natural blue atmosphere
+        .atmosphereAltitude(0.15) // Subtle atmosphere glow
         .pointsData(preparedSites)
         .pointLat('lat')
         .pointLng('lng')
