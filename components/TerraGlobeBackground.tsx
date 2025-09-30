@@ -284,6 +284,10 @@ export default function TerraGlobeBackground() {
         return
       }
       
+      // Debug logging
+      console.log('🌍 Globe initialization starting...')
+      console.log('📊 Sites data count:', sitesData.length)
+
       // Simple clustering: Group nearby sites (within ~500km) for cleaner homepage view
       const clusterDistance = 5 // degrees (~500km)
       const clusteredSites: any[] = []
@@ -328,6 +332,8 @@ export default function TerraGlobeBackground() {
         })
       })
 
+      console.log('🔗 Clustered sites count:', clusteredSites.length)
+
       // Prepare icon labels for simple homepage view
       const preparedSites = clusteredSites.map((site) => {
         // Energy type icons
@@ -351,6 +357,9 @@ export default function TerraGlobeBackground() {
           size: site.count > 1 ? 0.4 : 0.3 // Slightly larger for clusters
         }
       })
+
+      console.log('✨ Prepared sites for HTML elements:', preparedSites.length)
+      console.log('📍 First site:', preparedSites[0])
       
       // Beautiful Earth with icon markers (not 3D spheres!)
       const globe = Globe()(globeEl.current)
@@ -399,6 +408,9 @@ export default function TerraGlobeBackground() {
         .pointsData([]) // No 3D spheres!
         .labelsData([]) // No label dots!
         // Tooltips are handled by HTML elements' onclick/onmouseenter
+
+      console.log('✅ Globe configured with HTML elements, points/labels cleared')
+      console.log('🎨 Globe texture URL:', '/globe-textures/earth-blue-marble.jpg')
         
       // Set initial view - perfectly centered with optimal distance
       globe.pointOfView({ lat: 10, lng: 0, altitude: 2.2 }, 0) // Further back to see the whole Earth
