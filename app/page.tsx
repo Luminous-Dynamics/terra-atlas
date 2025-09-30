@@ -4,18 +4,16 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 
-// Dynamic import for simple gradient globe (no bugs!)
+// Dynamic import for clean 3D spinning Earth
 const TerraGlobe = dynamic(
-  () => import('../components/Globe'),
+  () => import('../components/SimpleSpinningGlobe'),
   {
     ssr: false,
     loading: () => (
       <div className="absolute inset-0 bg-black">
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="relative">
-            <div className="w-32 h-32 border border-emerald-500/20 rounded-full animate-pulse"></div>
-            <div className="absolute inset-0 w-32 h-32 border border-blue-500/20 rounded-full animate-pulse animation-delay-200"></div>
-            <div className="absolute inset-0 w-32 h-32 border border-purple-500/20 rounded-full animate-pulse animation-delay-400"></div>
+            <div className="w-32 h-32 border border-blue-500/20 rounded-full animate-spin"></div>
           </div>
         </div>
       </div>
