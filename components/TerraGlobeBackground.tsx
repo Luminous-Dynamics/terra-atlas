@@ -337,6 +337,12 @@ export default function TerraGlobeBackground() {
         .showAtmosphere(true)
         .atmosphereColor('#4a90e2') // Calm, natural blue atmosphere
         .atmosphereAltitude(0.15) // Subtle atmosphere glow
+        .showGlobe(true) // Explicitly enable globe rendering
+        .globeMaterial(new (window as any).THREE.MeshPhongMaterial({
+          color: '#1e3a8a', // Debug: solid dark blue to verify globe renders
+          opacity: 1.0,
+          transparent: false
+        }))
         .pointsData(preparedSites)
         .pointLat('lat')
         .pointLng('lng')
