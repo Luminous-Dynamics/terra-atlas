@@ -326,35 +326,38 @@ export default function Homepage() {
         </div>
       </section>
 
-      {/* How It Works Section - Enhanced */}
+      {/* How It Works Section - Peaceful & Inspiring */}
       <section className="py-24 md:py-32 px-6 relative bg-gradient-to-b from-black via-slate-950/30 to-black">
         <div className="max-w-7xl mx-auto">
-          {/* Section Header - Refined Typography */}
-          <div className="text-center mb-16 md:mb-20">
-            <div className="inline-block px-4 py-1.5 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 backdrop-blur-sm border border-emerald-400/20 rounded-full text-xs font-semibold text-emerald-300/90 tracking-wider uppercase mb-6">
-              Simple Process
+          {/* Section Header - Beautiful & Calming */}
+          <div className="text-center mb-16 md:mb-20 animate-fade-in-up">
+            <div className="inline-block px-5 py-2 bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-blue-500/10 backdrop-blur-md border border-emerald-400/20 rounded-full text-xs font-light text-emerald-200/90 tracking-widest uppercase mb-6 shadow-lg shadow-emerald-500/5">
+              ✨ Your Journey Begins
             </div>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white">
-              How It Works
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-extralight mb-5 text-white/95 leading-tight">
+              Three Steps to
+              <span className="block mt-2 bg-gradient-to-r from-emerald-300 via-cyan-300 to-blue-300 bg-clip-text text-transparent font-light">
+                Making an Impact
+              </span>
             </h2>
-            <p className="text-base md:text-lg text-white/60 max-w-2xl mx-auto leading-relaxed">
-              Start investing in clean energy in three simple steps
+            <p className="text-base md:text-lg text-white/50 max-w-2xl mx-auto leading-relaxed font-light">
+              Your path to meaningful investment starts here. Simple, secure, and inspiring.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6 md:gap-8">
             {/* Step 1 - Browse */}
             <div className="group relative scroll-reveal">
-              <div className="relative bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/[0.04] hover:border-emerald-400/30 transition-all duration-300">
-                {/* Step Number Badge */}
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-400/30 rounded-xl mb-6">
-                  <span className="text-xl font-bold text-emerald-400">1</span>
+              <div className="relative bg-gradient-to-br from-emerald-500/5 to-transparent backdrop-blur-lg border border-emerald-400/20 rounded-3xl p-8 hover:from-emerald-500/10 hover:border-emerald-400/40 hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-500">
+                {/* Step Number Badge - Enhanced */}
+                <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-emerald-400/20 to-cyan-400/20 border-2 border-emerald-400/40 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-emerald-500/20">
+                  <span className="text-2xl font-light text-emerald-300">1</span>
                 </div>
 
-                <h3 className="text-2xl font-semibold text-white mb-3">
+                <h3 className="text-2xl font-light text-white/95 mb-4">
                   Browse & Discover
                 </h3>
-                <p className="text-white/60 text-base leading-relaxed mb-6">
+                <p className="text-white/50 text-base leading-relaxed mb-6 font-light">
                   Explore 4M+ verified energy projects worldwide. Filter by technology, location, and returns.
                 </p>
 
@@ -377,16 +380,16 @@ export default function Homepage() {
 
             {/* Step 2 - Invest */}
             <div className="group relative scroll-reveal" style={{ animationDelay: '200ms' }}>
-              <div className="relative bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/[0.04] hover:border-cyan-400/30 transition-all duration-300">
-                {/* Step Number Badge */}
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-400/30 rounded-xl mb-6">
-                  <span className="text-xl font-bold text-cyan-400">2</span>
+              <div className="relative bg-gradient-to-br from-cyan-500/5 to-transparent backdrop-blur-lg border border-cyan-400/20 rounded-3xl p-8 hover:from-cyan-500/10 hover:border-cyan-400/40 hover:shadow-xl hover:shadow-cyan-500/10 transition-all duration-500">
+                {/* Step Number Badge - Enhanced */}
+                <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-cyan-400/20 to-blue-400/20 border-2 border-cyan-400/40 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-cyan-500/20">
+                  <span className="text-2xl font-light text-cyan-300">2</span>
                 </div>
 
-                <h3 className="text-2xl font-semibold text-white mb-3">
+                <h3 className="text-2xl font-light text-white/95 mb-4">
                   Invest Any Amount
                 </h3>
-                <p className="text-white/60 text-base leading-relaxed mb-6">
+                <p className="text-white/50 text-base leading-relaxed mb-6 font-light">
                   Start with just $10. Build a diversified portfolio across multiple projects and technologies.
                 </p>
 
@@ -409,16 +412,16 @@ export default function Homepage() {
 
             {/* Step 3 - Earn */}
             <div className="group relative scroll-reveal" style={{ animationDelay: '400ms' }}>
-              <div className="relative bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/[0.04] hover:border-purple-400/30 transition-all duration-300">
-                {/* Step Number Badge */}
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30 rounded-xl mb-6">
-                  <span className="text-xl font-bold text-purple-400">3</span>
+              <div className="relative bg-gradient-to-br from-purple-500/5 to-transparent backdrop-blur-lg border border-purple-400/20 rounded-3xl p-8 hover:from-purple-500/10 hover:border-purple-400/40 hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-500">
+                {/* Step Number Badge - Enhanced */}
+                <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-purple-400/20 to-pink-400/20 border-2 border-purple-400/40 rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-purple-500/20">
+                  <span className="text-2xl font-light text-purple-300">3</span>
                 </div>
 
-                <h3 className="text-2xl font-semibold text-white mb-3">
+                <h3 className="text-2xl font-light text-white/95 mb-4">
                   Earn & Track Returns
                 </h3>
-                <p className="text-white/60 text-base leading-relaxed mb-6">
+                <p className="text-white/50 text-base leading-relaxed mb-6 font-light">
                   Receive quarterly distributions. Track performance and environmental impact in real-time.
                 </p>
 
