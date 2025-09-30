@@ -146,112 +146,104 @@ export default function Homepage() {
         
         {/* Hero Content - Elegantly Positioned Around Globe */}
         <div className="relative z-10 min-h-screen flex flex-col">
-          {/* Top Section - Headline Floating Above Globe */}
-          <div className="flex-1 flex flex-col justify-start pt-24 md:pt-28 px-6">
-            <div className="text-center">
-              {/* Main Headline - Dramatic and Centered with Glow */}
-              <h1 className="text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-extralight leading-none mb-8 animate-fade-in-up">
-                <span className="block relative">
-                  <span className="bg-gradient-to-br from-white via-emerald-200 to-cyan-200 bg-clip-text text-transparent font-thin tracking-tighter drop-shadow-2xl animate-glow">
-                    72 Billion
-                  </span>
-                  <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 blur-3xl -z-10 animate-pulse-slow" />
-                  <div className="absolute -inset-8 bg-gradient-to-r from-cyan-500/10 via-emerald-500/10 to-purple-500/10 blur-2xl -z-20 animate-pulse-slower" />
+          {/* Top Section - Refined Hero Headline */}
+          <div className="flex-1 flex flex-col justify-start pt-24 md:pt-32 px-6">
+            <div className="text-center max-w-5xl mx-auto">
+              {/* Tagline Above - Professional Typography */}
+              <div className="mb-6 animate-fade-in-up">
+                <span className="inline-block px-6 py-2 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 backdrop-blur-sm border border-emerald-400/20 rounded-full text-sm font-medium text-emerald-300/90 tracking-wide">
+                  Global Energy Investment Platform
                 </span>
-                <span className="block text-2xl md:text-3xl lg:text-4xl font-light text-transparent bg-gradient-to-r from-emerald-400 via-cyan-400 to-purple-400 bg-clip-text mt-6 tracking-wide animate-gradient-flow bg-size-200">
-                  Investment Opportunities
+              </div>
+
+              {/* Main Headline - Clean and Bold */}
+              <h1 className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight mb-6 animate-fade-in-up animation-delay-100">
+                <span className="block text-white mb-2">
+                  Invest in Clean Energy
+                </span>
+                <span className="block bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent animate-gradient-flow bg-size-200">
+                  Starting at $10
                 </span>
               </h1>
-              {/* Enhanced tagline with better visibility */}
-              <div className="mt-8 space-y-2 animate-fade-in-up animation-delay-200">
-                <p className="text-lg md:text-xl text-white/60 font-light">
-                  AI analyzes <span className="text-emerald-400 font-medium">4M+ global sites</span> in real-time
-                </p>
-                <p className="text-sm md:text-base text-white/40 tracking-wide">
-                  Solar • Wind • Hydro • Nuclear • Storage
-                </p>
+
+              {/* Subheadline - Clear Value Prop */}
+              <p className="text-lg md:text-xl lg:text-2xl text-white/70 font-light leading-relaxed mb-8 max-w-3xl mx-auto animate-fade-in-up animation-delay-200">
+                AI-powered platform analyzing <span className="text-emerald-400 font-medium">4M+ renewable projects</span> worldwide.
+                Earn <span className="text-cyan-400 font-medium">11-14% returns</span> while building a sustainable future.
+              </p>
+
+              {/* Technology Badges */}
+              <div className="flex flex-wrap justify-center gap-3 text-sm text-white/50 animate-fade-in-up animation-delay-300">
+                <span className="px-4 py-1.5 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full">☀️ Solar</span>
+                <span className="px-4 py-1.5 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full">💨 Wind</span>
+                <span className="px-4 py-1.5 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full">💧 Hydro</span>
+                <span className="px-4 py-1.5 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full">⚛️ Nuclear</span>
+                <span className="px-4 py-1.5 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full">🔋 Storage</span>
               </div>
             </div>
           </div>
           
-          {/* Bottom Section - Refined Stats and CTA */}
-          <div className="px-6 pb-16">
-            <div className="max-w-5xl mx-auto">
-              {/* Intelligence-Focused Stats - Emphasizing AI Capabilities */}
-              <div className="flex flex-wrap justify-center gap-6 md:gap-8 mb-12 animate-fade-in-up animation-delay-400">
-                <div className="group relative px-8 py-4 bg-gradient-to-br from-emerald-500/10 to-emerald-900/10 backdrop-blur-md border border-emerald-400/30 rounded-3xl hover:scale-105 transition-all hover:shadow-2xl hover:shadow-emerald-500/30 animate-float" style={{ animationDelay: '0ms' }}>
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/5 via-transparent to-transparent rounded-3xl" />
-                  <div className="relative">
-                    <div className="text-3xl md:text-4xl font-bold bg-gradient-to-br from-emerald-300 to-emerald-500 bg-clip-text text-transparent">
-                      10,549
-                    </div>
-                    <div className="text-xs text-emerald-300/70 uppercase tracking-wider mt-2 font-medium">Live Projects</div>
-                  </div>
+          {/* Bottom Section - Clean Stats and CTA */}
+          <div className="px-6 pb-20">
+            <div className="max-w-6xl mx-auto">
+              {/* Refined Stats Grid - Clean and Professional */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12 animate-fade-in-up animation-delay-400">
+                <div className="group relative px-6 py-6 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl hover:border-emerald-400/40 hover:bg-white/10 transition-all">
+                  <div className="text-3xl font-bold text-white mb-2">10,549</div>
+                  <div className="text-sm text-white/50 font-medium">Active Projects</div>
                 </div>
-                <div className="group relative px-8 py-4 bg-gradient-to-br from-cyan-500/10 to-cyan-900/10 backdrop-blur-md border border-cyan-400/30 rounded-3xl hover:scale-105 transition-all hover:shadow-2xl hover:shadow-cyan-500/30 animate-float" style={{ animationDelay: '200ms' }}>
-                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 via-transparent to-transparent rounded-3xl" />
-                  <div className="relative">
-                    <div className="text-3xl md:text-4xl font-bold bg-gradient-to-br from-cyan-300 to-cyan-500 bg-clip-text text-transparent">
-                      $10
-                    </div>
-                    <div className="text-xs text-cyan-300/70 uppercase tracking-wider mt-2 font-medium">Min Investment</div>
-                  </div>
+                <div className="group relative px-6 py-6 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl hover:border-cyan-400/40 hover:bg-white/10 transition-all">
+                  <div className="text-3xl font-bold text-white mb-2">$10</div>
+                  <div className="text-sm text-white/50 font-medium">Minimum Entry</div>
                 </div>
-                <div className="group relative px-8 py-4 bg-gradient-to-br from-purple-500/10 to-purple-900/10 backdrop-blur-md border border-purple-400/30 rounded-3xl hover:scale-105 transition-all hover:shadow-2xl hover:shadow-purple-500/30 animate-float" style={{ animationDelay: '400ms' }}>
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-400/5 via-transparent to-transparent rounded-3xl" />
-                  <div className="relative">
-                    <div className="text-3xl md:text-4xl font-bold bg-gradient-to-br from-purple-300 to-purple-500 bg-clip-text text-transparent">
-                      94%
-                    </div>
-                    <div className="text-xs text-purple-300/70 uppercase tracking-wider mt-2 font-medium">AI Accuracy</div>
-                  </div>
+                <div className="group relative px-6 py-6 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl hover:border-purple-400/40 hover:bg-white/10 transition-all">
+                  <div className="text-3xl font-bold text-white mb-2">94%</div>
+                  <div className="text-sm text-white/50 font-medium">AI Accuracy</div>
                 </div>
-                <div className="group relative px-8 py-4 bg-gradient-to-br from-amber-500/10 to-amber-900/10 backdrop-blur-md border border-amber-400/30 rounded-3xl hover:scale-105 transition-all hover:shadow-2xl hover:shadow-amber-500/30 animate-float" style={{ animationDelay: '600ms' }}>
-                  <div className="absolute inset-0 bg-gradient-to-br from-amber-400/5 via-transparent to-transparent rounded-3xl" />
-                  <div className="relative">
-                    <div className="text-3xl md:text-4xl font-bold bg-gradient-to-br from-amber-300 to-amber-500 bg-clip-text text-transparent">
-                      13.7%
-                    </div>
-                    <div className="text-xs text-amber-300/70 uppercase tracking-wider mt-2 font-medium">Avg IRR</div>
-                  </div>
+                <div className="group relative px-6 py-6 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl hover:border-amber-400/40 hover:bg-white/10 transition-all">
+                  <div className="text-3xl font-bold text-white mb-2">13.7%</div>
+                  <div className="text-sm text-white/50 font-medium">Avg Returns</div>
                 </div>
               </div>
 
-              {/* CTA Buttons - Enhanced with Glow Effects */}
-              <div className="flex flex-col sm:flex-row gap-6 justify-center animate-fade-in-up animation-delay-600">
-                <Link 
-                  href="/explore" 
-                  className="group relative px-12 py-5 overflow-hidden rounded-full text-white font-semibold text-lg transition-all transform hover:scale-105 shadow-2xl shadow-emerald-500/30"
+              {/* Primary CTA - Simplified and Bold */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up animation-delay-500">
+                <Link
+                  href="/explore"
+                  className="group relative px-10 py-4 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl text-white font-semibold text-base transition-all hover:shadow-xl hover:shadow-emerald-500/25 hover:-translate-y-0.5"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-cyan-500 to-emerald-500 bg-size-200 animate-gradient-flow" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/40 to-cyan-600/40 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <span className="relative flex items-center justify-center gap-3">
-                    Start Investing Now
-                    <span className="text-2xl group-hover:translate-x-2 transition-transform">→</span>
+                  <span className="flex items-center gap-2">
+                    Explore Projects
+                    <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
                   </span>
                 </Link>
-                <Link 
-                  href="/api" 
-                  className="group px-12 py-5 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border-2 border-white/30 rounded-full text-white font-semibold text-lg hover:bg-white/20 hover:border-white/50 hover:shadow-xl transition-all"
+                <Link
+                  href="/api"
+                  className="px-10 py-4 bg-white/5 backdrop-blur-sm border border-white/20 rounded-xl text-white/90 font-semibold text-base hover:bg-white/10 hover:border-white/30 transition-all"
                 >
-                  <span className="flex items-center justify-center gap-3">
-                    Free API Access
-                    <span className="text-xl opacity-60 group-hover:opacity-100 transition-all">🚀</span>
-                  </span>
+                  View API Docs
                 </Link>
               </div>
-              
-              {/* Trust Indicators */}
-              <div className="mt-8 flex justify-center gap-6 text-xs text-white/30 animate-fade-in-up animation-delay-800">
-                <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-                  Live Data
+
+              {/* Trust Badges - Refined */}
+              <div className="mt-10 flex flex-wrap justify-center gap-6 text-sm text-white/40 animate-fade-in-up animation-delay-600">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                  Real-time data
                 </span>
-                <span className="flex items-center gap-1">
-                  🔒 Bank-Grade Security
+                <span className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  Bank-grade security
                 </span>
-                <span className="flex items-center gap-1">
-                  ✓ SEC Compliant
+                <span className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  SEC compliant
                 </span>
               </div>
             </div>
