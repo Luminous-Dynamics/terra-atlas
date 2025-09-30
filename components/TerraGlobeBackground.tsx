@@ -323,16 +323,15 @@ export default function TerraGlobeBackground() {
       })
       
       // Beautiful Earth with natural atmosphere
-      // Try multiple texture sources for reliability
+      // Using locally hosted textures for 100% reliability
       const textureUrls = {
-        // Primary: vasturiano's working examples
-        earth: 'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-blue-marble.jpg',
-        topology: 'https://raw.githubusercontent.com/vasturiano/three-globe/master/example/img/earth-topology.png'
+        earth: '/globe-textures/earth-blue-marble.jpg',
+        topology: '/globe-textures/earth-topology.png'
       }
 
       const globe = Globe()(globeEl.current)
-        .globeImageUrl(textureUrls.earth) // Direct GitHub raw URL
-        .bumpImageUrl(textureUrls.topology) // Direct GitHub raw URL
+        .globeImageUrl(textureUrls.earth) // Local texture - always available
+        .bumpImageUrl(textureUrls.topology) // Local texture - always available
         .backgroundImageUrl(null) // Clean space background
         .backgroundColor('rgba(0, 0, 0, 0)') // Transparent
         .showAtmosphere(true)
