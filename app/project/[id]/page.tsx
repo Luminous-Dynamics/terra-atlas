@@ -5,7 +5,8 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { ArrowLeft, MapPin, Zap, DollarSign, Users, Leaf, TrendingUp, Battery, Globe, Wind, Sun, Droplets, Atom, Calendar, Building, AlertCircle, CheckCircle, Clock, Share2, Heart, Download } from 'lucide-react'
-import InvestmentCalculator from '@/components/InvestmentCalculator'
+import InvestmentFlow from '@/components/InvestmentFlow'
+import { useAuth } from '@/app/contexts/AuthContext'
 
 // Dynamically import map for SSR safety
 const ProjectMap = dynamic(() => import('@/components/ProjectMap'), {
@@ -29,15 +30,18 @@ interface Project {
   investment_raised?: number
   min_investment?: number
   irr?: number
+  roi_percentage?: number
   completion_date?: string
   power_offtaker?: string
   total_homes_powered?: number
   co2_saved_annual?: number
+  location?: string
 }
 
 export default function ProjectDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { user } = useAuth()
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
@@ -60,10 +64,12 @@ export default function ProjectDetailPage() {
           investment_raised: data.capacity_mw * 1000000 * 0.35, // 35% raised
           min_investment: 100,
           irr: data.type === 'Solar' ? 12 : 11,
+          roi_percentage: data.type === 'Solar' ? 12 : 11, // Same as IRR for now
           completion_date: '2027-Q3',
           power_offtaker: 'Regional Utility Co.',
           total_homes_powered: Math.round(data.capacity_mw * 750),
-          co2_saved_annual: Math.round(data.capacity_mw * 500)
+          co2_saved_annual: Math.round(data.capacity_mw * 500),
+          location: `${data.state}, ${data.country}`
         }
         setProject(enhanced)
       }
@@ -466,10 +472,13 @@ export default function ProjectDetailPage() {
             )}
           </div>
 
-          {/* Sidebar - Investment Calculator */}
+          {/* Sidebar - Investment Flow */}
           <div className="lg:col-span-1">
             <div className="sticky top-24">
-              <InvestmentCalculator project={project} />
+              <InvestmentFlow 
+                project={project} 
+                user={user ? { id: user.id, email: user.email } : undefined}
+              />
               
               {/* Quick Stats */}
               <div className="mt-6 bg-gray-900/50 backdrop-blur-md rounded-xl p-6 border border-gray-800">

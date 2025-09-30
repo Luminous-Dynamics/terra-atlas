@@ -15,12 +15,34 @@ export async function GET(request: Request) {
     // Use the real database with 79,193 projects
     const db = new Database(path.join(process.cwd(), 'data', 'terra-atlas-local.db'), { readonly: true })
     
-    // Build query with filters
-    let query = 'SELECT * FROM projects WHERE 1=1'
+    // Build query with filters - map to frontend expected format
+    let query = `SELECT 
+      id,
+      project_name as name,
+      project_type as type,
+      developer,
+      owner_type,
+      state,
+      county,
+      region,
+      state as country, -- Map state to country for now
+      latitude,
+      longitude,
+      capacity_mw,
+      energy_source,
+      technology_type,
+      status,
+      operational,
+      year_completed,
+      total_cost as investment,
+      annual_revenue_potential,
+      carbon_avoided_tons_per_year
+    FROM projects WHERE 1=1`
+    
     const params: any[] = []
     
     if (type) {
-      query += ' AND type = ?'
+      query += ' AND project_type = ?'
       params.push(type)
     }
     if (status) {
@@ -28,11 +50,11 @@ export async function GET(request: Request) {
       params.push(status)
     }
     if (country) {
-      query += ' AND country = ?'
+      query += ' AND state = ?'
       params.push(country)
     }
     if (search) {
-      query += ' AND (name LIKE ? OR location LIKE ? OR developer LIKE ?)'
+      query += ' AND (project_name LIKE ? OR state LIKE ? OR developer LIKE ?)'
       const searchPattern = `%${search}%`
       params.push(searchPattern, searchPattern, searchPattern)
     }
@@ -50,9 +72,9 @@ export async function GET(request: Request) {
     const { count } = countStmt.get() as any
     
     // Get metadata for filters
-    const types = db.prepare('SELECT DISTINCT type FROM projects WHERE type IS NOT NULL').all()
+    const types = db.prepare('SELECT DISTINCT project_type as type FROM projects WHERE project_type IS NOT NULL').all()
     const statuses = db.prepare('SELECT DISTINCT status FROM projects WHERE status IS NOT NULL').all()
-    const countries = db.prepare('SELECT DISTINCT country FROM projects WHERE country IS NOT NULL LIMIT 50').all()
+    const states = db.prepare('SELECT DISTINCT state FROM projects WHERE state IS NOT NULL LIMIT 50').all()
     
     db.close()
     
@@ -62,7 +84,7 @@ export async function GET(request: Request) {
       metadata: {
         types: types.map((t: any) => t.type),
         statuses: statuses.map((s: any) => s.status),
-        countries: countries.map((c: any) => c.country)
+        countries: states.map((s: any) => s.state)
       }
     })
   } catch (error) {

@@ -14,6 +14,12 @@ const nextConfig: NextConfig = {
     // !! WARN !!
     ignoreBuildErrors: true,
   },
+  // Disable image optimization for now
+  images: {
+    unoptimized: true,
+  },
+  // Ensure pages directory is included
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
 };
 
 export default nextConfig;

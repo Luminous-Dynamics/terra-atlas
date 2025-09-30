@@ -1,13 +1,14 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
+import { AuthProvider } from './contexts/AuthContext'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Terra Atlas - The Planetary Nervous System',
-  description: 'Real-time planetary intelligence platform for climate monitoring and renewable energy coordination',
-  keywords: 'climate, energy, renewable, monitoring, data, visualization, terra atlas',
+  title: 'Terra Atlas - Global Energy Investment Platform',
+  description: 'Democratizing energy investment with 166,000+ projects worldwide. Invest from $10 in solar, wind, hydro, nuclear, and storage projects.',
+  keywords: 'energy investment, renewable energy, solar investment, wind power, sustainable investing, climate finance',
   authors: [{ name: 'Terra Atlas Team' }],
   manifest: '/manifest.json',
   appleWebApp: {
@@ -16,8 +17,8 @@ export const metadata: Metadata = {
     title: 'Terra Atlas',
   },
   openGraph: {
-    title: 'Terra Atlas - The Planetary Nervous System',
-    description: 'Real-time planetary intelligence platform',
+    title: 'Terra Atlas - Global Energy Investment Platform',
+    description: 'Invest in the energy revolution. 166,000+ projects, starting at $10.',
     url: 'https://terra-atlas.earth',
     siteName: 'Terra Atlas',
     type: 'website',
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Terra Atlas',
-    description: 'The Planetary Nervous System',
+    description: 'Global Energy Investment Platform - 166,000+ Projects',
   },
 }
 
@@ -50,7 +51,11 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   )
 }
