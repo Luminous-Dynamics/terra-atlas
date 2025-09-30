@@ -284,106 +284,157 @@ export default function TerraGlobeBackground() {
         return
       }
       
-      // Prepare data with intelligence score visualization
-      const preparedSites = sitesData.map((site, idx) => {
-        // Get intelligence score (default to 75 if not present)
-        const score = site.score || 75
-        const scoreNormalized = score / 100 // 0-1 range
-        
-        // DEBUG: Make points TINY to see if globe is hidden underneath
-        const sizeMultiplier = isMobile ? 0.0005 : 0.0003  // 100x smaller!
-        const baseSize = Math.log10(site.capacity + 1) * sizeMultiplier
-        // Gentle size variation based on score
-        const scoreBoost = 1 + (scoreNormalized * 0.25)
-        const size = baseSize * scoreBoost
+      // Simple clustering: Group nearby sites (within ~500km) for cleaner homepage view
+      const clusterDistance = 5 // degrees (~500km)
+      const clusteredSites: any[] = []
+      const processed = new Set<number>()
 
-        // More transparent colors to let Earth show through
-        const baseColors = {
-          solar: 'rgba(251, 191, 36, 0.8)',      // Increase opacity to see tiny points
-          wind: 'rgba(96, 165, 250, 0.8)',       // Increase opacity
-          hydro: 'rgba(52, 211, 153, 0.8)',      // Increase opacity
-          geothermal: 'rgba(249, 115, 22, 0.8)'  // Increase opacity
+      sitesData.forEach((site, idx) => {
+        if (processed.has(idx)) return
+
+        // Find nearby sites to cluster
+        const cluster = [site]
+        processed.add(idx)
+
+        sitesData.forEach((otherSite, otherIdx) => {
+          if (processed.has(otherIdx)) return
+
+          const distance = Math.sqrt(
+            Math.pow(site.lat - otherSite.lat, 2) +
+            Math.pow(site.lng - otherSite.lng, 2)
+          )
+
+          if (distance < clusterDistance) {
+            cluster.push(otherSite)
+            processed.add(otherIdx)
+          }
+        })
+
+        // Create cluster or individual marker
+        const totalCapacity = cluster.reduce((sum, s) => sum + (s.capacity || 0), 0)
+        const avgLat = cluster.reduce((sum, s) => sum + s.lat, 0) / cluster.length
+        const avgLng = cluster.reduce((sum, s) => sum + s.lng, 0) / cluster.length
+
+        clusteredSites.push({
+          lat: avgLat,
+          lng: avgLng,
+          type: cluster[0].type,
+          count: cluster.length,
+          totalCapacity,
+          projects: cluster,
+          name: cluster.length > 1
+            ? `${cluster.length} projects`
+            : cluster[0].name
+        })
+      })
+
+      // Prepare icon labels for simple homepage view
+      const preparedSites = clusteredSites.map((site) => {
+        // Energy type icons
+        const typeIcons: Record<string, string> = {
+          solar: '☀️',
+          wind: '💨',
+          hydro: '💧',
+          geothermal: '🌋',
+          renewable: '⚡'
         }
 
-        const enhancedColor = baseColors[site.type] || 'rgba(255, 255, 255, 0.8)'
+        const icon = typeIcons[site.type] || '⚡'
+        const label = site.count > 1
+          ? `${icon} ${site.count}`
+          : icon
 
-        // Keep points very close to surface
-        const baseAltitude = 0.001  // Much closer to surface
-        const scoreAltitude = scoreNormalized * 0.002  // Minimal lift
-        const altitude = baseAltitude + scoreAltitude
-        
         return {
           ...site,
-          size,
-          color: enhancedColor,
-          altitude,
-          score, // Keep score for potential tooltip/label use
-          scoreNormalized // Store normalized score for ring animations
+          label,
+          icon,
+          size: site.count > 1 ? 0.4 : 0.3 // Slightly larger for clusters
         }
       })
       
-      // Debug: Start with NO textures, just solid material
-      // Once this works, we'll add textures back
+      // Beautiful Earth with icon markers (not 3D spheres!)
       const globe = Globe()(globeEl.current)
-        .globeImageUrl(null as any) // No texture - use material only
-        .bumpImageUrl(null as any) // No bump map
+        .globeImageUrl('/globe-textures/earth-blue-marble.jpg') // Local texture - always loads!
+        .bumpImageUrl('/globe-textures/earth-topology.png') // Add surface detail
         .backgroundImageUrl(null) // Clean space background
         .backgroundColor('rgba(0, 0, 0, 0)') // Transparent
         .showAtmosphere(true)
         .atmosphereColor('#4a90e2') // Calm, natural blue atmosphere
         .atmosphereAltitude(0.15) // Subtle atmosphere glow
-        .showGlobe(true) // Explicitly enable globe rendering
-        .pointsData(preparedSites)
-        .pointLat('lat')
-        .pointLng('lng')
-        .pointColor('color')
-        .pointAltitude('altitude')
-        .pointRadius('size')
-        .pointResolution(32) // Higher resolution for smoother points
-        .pointsMerge(false)
-        .enablePointerInteraction(true) // Enable interaction for tooltips
-        .pointLabel((d: any) => {
-          // Create rich HTML tooltip with intelligence score
-          const score = Math.round((d.scoreNormalized || 0.75) * 100)
-          const scoreColor = score >= 90 ? '#10b981' : // emerald-500
-                           score >= 80 ? '#06b6d4' : // cyan-500
-                           score >= 70 ? '#a855f7' : // purple-500
-                           '#f59e0b' // amber-500
-          
+
+        // Use HTML labels instead of 3D points - shows Earth!
+        .htmlElementsData(preparedSites)
+        .htmlLat('lat')
+        .htmlLng('lng')
+        .htmlAltitude(0.001) // Just above surface
+        .htmlElement((d: any) => {
+          const el = document.createElement('div')
+          el.style.cssText = `
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 12px;
+            padding: 4px 8px;
+            font-size: ${d.count > 1 ? '14px' : '16px'};
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+          `
+          el.innerHTML = d.label
+          el.onmouseenter = () => el.style.transform = 'scale(1.2)'
+          el.onmouseleave = () => el.style.transform = 'scale(1)'
+
+          // Tooltip on click
+          el.onclick = () => {
+            alert(`${d.name}\nCapacity: ${d.totalCapacity.toLocaleString()} MW\n${d.count > 1 ? `${d.count} projects` : ''}`)
+          }
+
+          return el
+        })
+
+        // Remove old 3D point configuration
+        .pointsData([]) // No 3D spheres!
+
+        // Keep labels for detailed hover info
+        .labelsData(preparedSites)
+        .labelLat('lat')
+        .labelLng('lng')
+        .labelText('name')
+        .labelSize(0)
+        .labelDotRadius(0)
+        .labelLabel((d: any) => {
+          // Simple tooltip for clustered projects
+          const typeColors: Record<string, string> = {
+            solar: '#fbbf24',
+            wind: '#60a5fa',
+            hydro: '#34d399',
+            geothermal: '#f97316',
+            renewable: '#a855f7'
+          }
+
+          const color = typeColors[d.type] || '#a855f7'
+
           return `
             <div style="
               background: linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(16,24,48,0.95) 100%);
-              border: 1px solid ${scoreColor}40;
+              border: 1px solid ${color}40;
               border-radius: 12px;
               padding: 12px 16px;
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 48px ${scoreColor}20;
+              box-shadow: 0 8px 32px rgba(0,0,0,0.8);
               backdrop-filter: blur(10px);
-              min-width: 280px;
+              min-width: 240px;
             ">
               <div style="font-size: 16px; font-weight: 600; color: #ffffff; margin-bottom: 8px;">
-                ${d.name || 'Energy Project'}
-              </div>
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                <div style="
-                  background: linear-gradient(135deg, ${scoreColor}40, ${scoreColor}20);
-                  border: 1px solid ${scoreColor}60;
-                  border-radius: 8px;
-                  padding: 4px 12px;
-                  font-size: 20px;
-                  font-weight: 700;
-                  color: ${scoreColor};
-                ">
-                  ${score}
-                </div>
-                <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">
-                  Intelligence Score
-                </div>
+                ${d.icon} ${d.name}
               </div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
                 <span style="
-                  background: ${d.color}30;
-                  color: ${d.color};
+                  background: ${color}30;
+                  color: ${color};
                   padding: 2px 8px;
                   border-radius: 4px;
                   font-size: 12px;
@@ -393,34 +444,19 @@ export default function TerraGlobeBackground() {
                   ${d.type}
                 </span>
                 <span style="color: #cbd5e1; font-size: 12px;">
-                  ${d.capacity} MW
+                  ${d.totalCapacity.toLocaleString()} MW
                 </span>
-                ${d.state ? `<span style="color: #94a3b8; font-size: 12px;">${d.state}</span>` : ''}
-                ${d.country ? `<span style="color: #94a3b8; font-size: 12px;">${d.country}</span>` : ''}
               </div>
-              ${d.investment_million ? `
-                <div style="font-size: 13px; color: #10b981; margin-top: 8px; padding-top: 8px; border-top: 1px solid #ffffff10;">
-                  💰 $${d.investment_million}M investment
+              ${d.count > 1 ? `
+                <div style="font-size: 13px; color: #60a5fa; margin-top: 8px; padding-top: 8px; border-top: 1px solid #ffffff10;">
+                  📍 ${d.count} projects in this area
                 </div>
               ` : ''}
               <div style="font-size: 11px; color: #64748b; margin-top: 6px;">
-                ${score >= 90 ? '⭐ Top-tier opportunity' :
-                  score >= 80 ? '✨ High-potential project' :
-                  score >= 70 ? '📈 Strong fundamentals' :
-                  '🔍 Strategic opportunity'}
+                Click to explore details
               </div>
             </div>
           `
-        })
-        .onPointClick((point: any) => {
-          // Log click for potential future navigation
-          console.log('Project clicked:', point.name, 'Score:', Math.round((point.scoreNormalized || 0.75) * 100))
-        })
-        .onPointHover((point: any) => {
-          // Change cursor on hover
-          if (globeEl.current) {
-            globeEl.current.style.cursor = point ? 'pointer' : 'grab'
-          }
         })
         
       // Set initial view - perfectly centered with optimal distance
@@ -432,54 +468,9 @@ export default function TerraGlobeBackground() {
       globe.controls().enableZoom = true // Allow gentle zoom
       globe.controls().enablePan = false
       globe.controls().rotateSpeed = 0.2 // Gentle manual rotation
-      
-      // Gentle, subtle pulsing rings - only for major projects
-      const capacityThreshold = isMobile ? 5000 : 2000 // Only show rings for larger projects
-      const ringsData = preparedSites.filter(site => site.capacity > capacityThreshold).map(site => {
-        // Very slow, calming pulse animation
-        const speedMultiplier = 0.5 // Slow and serene
 
-        // Gentle ring patterns
-        const getRingConfig = () => {
-          const baseConfig = {
-            maxR: site.size * 12, // Smaller rings
-            propagationSpeed: 0.3 * speedMultiplier, // Very slow
-            repeatPeriod: 8000 + Math.random() * 4000, // 8-12 second intervals
-          }
-
-          switch(site.type) {
-            case 'solar':
-              return { ...baseConfig, color: 'rgba(251, 191, 36, 0.25)' } // Very subtle
-            case 'wind':
-              return { ...baseConfig, color: 'rgba(96, 165, 250, 0.25)' }
-            case 'hydro':
-              return { ...baseConfig, color: 'rgba(52, 211, 153, 0.25)' }
-            default: // geothermal
-              return { ...baseConfig, color: 'rgba(249, 115, 22, 0.25)' }
-          }
-        }
-
-        const config = getRingConfig()
-        return {
-          lat: site.lat,
-          lng: site.lng,
-          ...config
-        }
-      })
-      
-      globe
-        .ringsData(ringsData)
-        .ringMaxRadius('maxR')
-        .ringPropagationSpeed('propagationSpeed')
-        .ringRepeatPeriod('repeatPeriod')
-        .ringColor((ring) => (t) => {
-          // Gentle fade for rings
-          const color = ring.color || 'rgba(96, 165, 250, 0.25)'
-          const opacity = (1 - t) * 0.25 // Very subtle
-          return color.replace(/[\d.]+\)$/, `${opacity})`)
-        })
-
-      // Remove arcs to keep Earth view clean and uncluttered
+      // Keep homepage simple - no rings or arcs
+      globe.ringsData([])
       globe.arcsData([])
       
       globeRef.current = globe
