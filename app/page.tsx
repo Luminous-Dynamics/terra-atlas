@@ -4,18 +4,18 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 
-// Dynamic import for 3D Three.js globe with project markers
+// Dynamic import for background Three.js globe
 const TerraGlobe = dynamic(
-  () => import('../components/TerraGlobeThree'),
+  () => import('../components/TerraGlobeBackground'),
   {
     ssr: false,
     loading: () => (
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-950/50 to-black">
+      <div className="absolute inset-0 bg-gradient-to-b from-emerald-950/20 via-black to-black">
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="relative">
-            <div className="w-32 h-32 border border-blue-500/20 rounded-full animate-pulse"></div>
-            <div className="absolute inset-0 w-32 h-32 border border-cyan-500/20 rounded-full animate-pulse animation-delay-200"></div>
-            <div className="absolute inset-0 w-32 h-32 border border-green-500/20 rounded-full animate-pulse animation-delay-400"></div>
+            <div className="w-32 h-32 border border-emerald-500/10 rounded-full animate-pulse"></div>
+            <div className="absolute inset-0 w-32 h-32 border border-cyan-500/10 rounded-full animate-pulse animation-delay-200"></div>
+            <div className="absolute inset-0 w-32 h-32 border border-purple-500/10 rounded-full animate-pulse animation-delay-400"></div>
           </div>
         </div>
       </div>
