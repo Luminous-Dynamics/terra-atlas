@@ -23,19 +23,20 @@ const { chromium } = require('playwright');
 
     console.log('Navigating to https://atlas.luminousdynamics.io...');
     await page.goto('https://atlas.luminousdynamics.io', {
-      waitUntil: 'networkidle',
-      timeout: 30000
+      waitUntil: 'domcontentloaded',
+      timeout: 60000
     });
 
     // Wait for the globe to render
     console.log('Waiting for page to fully load...');
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(8000);
 
     // Take full page screenshot
     console.log('Taking screenshot...');
     await page.screenshot({
       path: 'screenshots/homepage-full.png',
-      fullPage: true
+      fullPage: true,
+      timeout: 60000
     });
 
     // Take viewport screenshot (above the fold)

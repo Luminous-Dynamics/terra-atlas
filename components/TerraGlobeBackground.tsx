@@ -322,10 +322,10 @@ export default function TerraGlobeBackground() {
         }
       })
       
-      // Beautiful, calm Earth with natural atmosphere (v2 with cache busting)
+      // Beautiful, calm Earth with natural atmosphere (using reliable CDN)
       const globe = Globe()(globeEl.current)
-        .globeImageUrl('//unpkg.com/three-globe@2.31.1/example/img/earth-blue-marble.jpg') // Beautiful Earth texture
-        .bumpImageUrl('//unpkg.com/three-globe@2.31.1/example/img/earth-topology.png') // Terrain depth
+        .globeImageUrl('https://cdn.jsdelivr.net/npm/three-globe@2.31.1/example/img/earth-blue-marble.jpg') // Beautiful Earth texture (reliable HTTPS CDN)
+        .bumpImageUrl('https://cdn.jsdelivr.net/npm/three-globe@2.31.1/example/img/earth-topology.png') // Terrain depth
         .backgroundImageUrl(null) // Clean space background
         .backgroundColor('rgba(0, 0, 0, 0)') // Transparent
         .showAtmosphere(true)
