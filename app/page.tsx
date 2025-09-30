@@ -45,6 +45,28 @@ export default function Homepage() {
     if (process.env.NODE_ENV === 'development') {
       setShowTestPanel(true)
     }
+
+    // Scroll-triggered animations
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -100px 0px'
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('scroll-revealed')
+        }
+      })
+    }, observerOptions)
+
+    // Observe all elements with scroll-reveal class
+    const elements = document.querySelectorAll('.scroll-reveal')
+    elements.forEach(el => observer.observe(el))
+
+    return () => {
+      elements.forEach(el => observer.unobserve(el))
+    }
   }, [])
 
   const fetchStats = async () => {
@@ -258,87 +280,116 @@ export default function Homepage() {
         </div>
       </section>
 
-      {/* How It Works Section - Educational */}
-      <section className="py-32 px-6 relative">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-extralight mb-6">
-              <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                How Terra Atlas Works
-              </span>
+      {/* How It Works Section - Enhanced */}
+      <section className="py-24 md:py-32 px-6 relative bg-gradient-to-b from-black via-slate-950/30 to-black">
+        <div className="max-w-7xl mx-auto">
+          {/* Section Header - Refined Typography */}
+          <div className="text-center mb-16 md:mb-20">
+            <div className="inline-block px-4 py-1.5 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 backdrop-blur-sm border border-emerald-400/20 rounded-full text-xs font-semibold text-emerald-300/90 tracking-wider uppercase mb-6">
+              Simple Process
+            </div>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white">
+              How It Works
             </h2>
-            <p className="text-white/50 text-lg max-w-3xl mx-auto">
-              Three simple steps to start investing in clean energy and earning returns
+            <p className="text-base md:text-lg text-white/60 max-w-2xl mx-auto leading-relaxed">
+              Start investing in clean energy in three simple steps
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
             {/* Step 1 - Browse */}
-            <div className="group relative">
-              <div className="absolute -inset-2 bg-gradient-to-r from-emerald-500/30 to-cyan-500/30 rounded-3xl blur-2xl opacity-50 group-hover:opacity-100 transition-all duration-500"></div>
-              <div className="relative bg-gradient-to-br from-emerald-950/90 via-black/90 to-cyan-950/90 backdrop-blur-xl border border-emerald-400/30 rounded-3xl p-8 hover:border-emerald-400/60 transition-all hover:transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-500/20">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-emerald-500/20 to-cyan-500/10 rounded-full blur-3xl"></div>
-                <div className="relative">
-                  <div className="text-5xl mb-6 text-white/20 font-bold">01</div>
-                  <h3 className="text-2xl font-medium bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent mb-4">
-                    Browse & Discover
-                  </h3>
-                  <p className="text-white/70 text-base leading-relaxed mb-6">
-                    Explore 4 million+ verified energy projects worldwide. Filter by technology, location, returns, and impact metrics.
-                  </p>
-                  <ul className="space-y-2 text-sm text-white/60">
-                    <li>✓ Solar farms & rooftops</li>
-                    <li>✓ Wind on/offshore</li>
-                    <li>✓ Hydro & pumped storage</li>
-                    <li>✓ Next-gen nuclear SMRs</li>
-                  </ul>
+            <div className="group relative scroll-reveal">
+              <div className="relative bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/[0.04] hover:border-emerald-400/30 transition-all duration-300">
+                {/* Step Number Badge */}
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-400/30 rounded-xl mb-6">
+                  <span className="text-xl font-bold text-emerald-400">1</span>
                 </div>
+
+                <h3 className="text-2xl font-semibold text-white mb-3">
+                  Browse & Discover
+                </h3>
+                <p className="text-white/60 text-base leading-relaxed mb-6">
+                  Explore 4M+ verified energy projects worldwide. Filter by technology, location, and returns.
+                </p>
+
+                {/* Feature List */}
+                <ul className="space-y-3">
+                  {[
+                    { icon: '☀️', text: 'Solar farms & rooftops' },
+                    { icon: '💨', text: 'Wind on/offshore' },
+                    { icon: '💧', text: 'Hydro & storage' },
+                    { icon: '⚛️', text: 'Next-gen nuclear' }
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-center gap-3 text-sm text-white/50">
+                      <span className="text-lg">{item.icon}</span>
+                      <span>{item.text}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
 
             {/* Step 2 - Invest */}
-            <div className="group relative">
-              <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500/30 to-purple-500/30 rounded-3xl blur-2xl opacity-50 group-hover:opacity-100 transition-all duration-500"></div>
-              <div className="relative bg-gradient-to-br from-cyan-950/90 via-black/90 to-purple-950/90 backdrop-blur-xl border border-cyan-400/30 rounded-3xl p-8 hover:border-cyan-400/60 transition-all hover:transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/20">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-cyan-500/20 to-purple-500/10 rounded-full blur-3xl"></div>
-                <div className="relative">
-                  <div className="text-5xl mb-6 text-white/20 font-bold">02</div>
-                  <h3 className="text-2xl font-medium bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent mb-4">
-                    Invest Any Amount
-                  </h3>
-                  <p className="text-white/70 text-base leading-relaxed mb-6">
-                    Start with just $10 or invest thousands. Build a diversified portfolio across multiple projects and technologies.
-                  </p>
-                  <ul className="space-y-2 text-sm text-white/60">
-                    <li>✓ No accreditation required</li>
-                    <li>✓ Fractional ownership</li>
-                    <li>✓ Instant diversification</li>
-                    <li>✓ One-click checkout</li>
-                  </ul>
+            <div className="group relative scroll-reveal" style={{ animationDelay: '200ms' }}>
+              <div className="relative bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/[0.04] hover:border-cyan-400/30 transition-all duration-300">
+                {/* Step Number Badge */}
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-400/30 rounded-xl mb-6">
+                  <span className="text-xl font-bold text-cyan-400">2</span>
                 </div>
+
+                <h3 className="text-2xl font-semibold text-white mb-3">
+                  Invest Any Amount
+                </h3>
+                <p className="text-white/60 text-base leading-relaxed mb-6">
+                  Start with just $10. Build a diversified portfolio across multiple projects and technologies.
+                </p>
+
+                {/* Feature List */}
+                <ul className="space-y-3">
+                  {[
+                    { icon: '🎯', text: 'No accreditation required' },
+                    { icon: '📊', text: 'Fractional ownership' },
+                    { icon: '🔄', text: 'Instant diversification' },
+                    { icon: '⚡', text: 'One-click checkout' }
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-center gap-3 text-sm text-white/50">
+                      <span className="text-lg">{item.icon}</span>
+                      <span>{item.text}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
 
             {/* Step 3 - Earn */}
-            <div className="group relative">
-              <div className="absolute -inset-2 bg-gradient-to-r from-purple-500/30 to-pink-500/30 rounded-3xl blur-2xl opacity-50 group-hover:opacity-100 transition-all duration-500"></div>
-              <div className="relative bg-gradient-to-br from-purple-950/90 via-black/90 to-pink-950/90 backdrop-blur-xl border border-purple-400/30 rounded-3xl p-8 hover:border-purple-400/60 transition-all hover:transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/20">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-purple-500/20 to-pink-500/10 rounded-full blur-3xl"></div>
-                <div className="relative">
-                  <div className="text-5xl mb-6 text-white/20 font-bold">03</div>
-                  <h3 className="text-2xl font-medium bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent mb-4">
-                    Earn & Track Returns
-                  </h3>
-                  <p className="text-white/70 text-base leading-relaxed mb-6">
-                    Receive quarterly distributions from energy sales. Track performance and environmental impact in real-time.
-                  </p>
-                  <ul className="space-y-2 text-sm text-white/60">
-                    <li>✓ 11-14% average returns</li>
-                    <li>✓ Quarterly payouts</li>
-                    <li>✓ Real-time monitoring</li>
-                    <li>✓ Impact tracking</li>
-                  </ul>
+            <div className="group relative scroll-reveal" style={{ animationDelay: '400ms' }}>
+              <div className="relative bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/[0.04] hover:border-purple-400/30 transition-all duration-300">
+                {/* Step Number Badge */}
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30 rounded-xl mb-6">
+                  <span className="text-xl font-bold text-purple-400">3</span>
                 </div>
+
+                <h3 className="text-2xl font-semibold text-white mb-3">
+                  Earn & Track Returns
+                </h3>
+                <p className="text-white/60 text-base leading-relaxed mb-6">
+                  Receive quarterly distributions. Track performance and environmental impact in real-time.
+                </p>
+
+                {/* Feature List */}
+                <ul className="space-y-3">
+                  {[
+                    { icon: '💰', text: '11-14% average returns' },
+                    { icon: '📅', text: 'Quarterly payouts' },
+                    { icon: '📈', text: 'Real-time monitoring' },
+                    { icon: '🌱', text: 'Impact tracking' }
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-center gap-3 text-sm text-white/50">
+                      <span className="text-lg">{item.icon}</span>
+                      <span>{item.text}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </div>
@@ -659,106 +710,130 @@ export default function Homepage() {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        
+
         @keyframes fade-in-up {
-          from { 
+          from {
             opacity: 0;
             transform: translateY(20px);
           }
-          to { 
+          to {
             opacity: 1;
             transform: translateY(0);
           }
         }
-        
+
         @keyframes scroll-down {
           0%, 100% { transform: translateY(0); opacity: 0.5; }
           50% { transform: translateY(8px); opacity: 1; }
         }
-        
+
         @keyframes pulse-slow {
           0%, 100% { opacity: 0.05; }
           50% { opacity: 0.15; }
         }
-        
+
         @keyframes pulse-slower {
           0%, 100% { opacity: 0.03; }
           50% { opacity: 0.1; }
         }
-        
+
         @keyframes gradient-flow {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
-        
+
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-10px); }
         }
-        
+
         @keyframes glow {
-          0%, 100% { 
+          0%, 100% {
             filter: brightness(1) drop-shadow(0 0 20px rgba(16, 185, 129, 0.3));
           }
-          50% { 
+          50% {
             filter: brightness(1.1) drop-shadow(0 0 30px rgba(16, 185, 129, 0.5));
           }
         }
-        
+
+        /* Scroll Reveal Animation */
+        .scroll-reveal {
+          opacity: 0;
+          transform: translateY(30px);
+          transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .scroll-revealed {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
         .animate-fade-in {
           animation: fade-in 1s ease-out;
         }
-        
+
         .animate-float {
           animation: float 6s ease-in-out infinite;
         }
-        
+
         .animate-glow {
           animation: glow 4s ease-in-out infinite;
         }
-        
+
         .animate-fade-in-up {
           animation: fade-in-up 1s ease-out;
         }
-        
+
         .animate-scroll-down {
           animation: scroll-down 2s ease-in-out infinite;
         }
-        
+
         .animate-pulse-slow {
           animation: pulse-slow 6s ease-in-out infinite;
         }
-        
+
         .animate-pulse-slower {
           animation: pulse-slower 8s ease-in-out infinite;
         }
-        
+
         .animate-gradient-flow {
           animation: gradient-flow 5s ease infinite;
           background-size: 200% 200%;
         }
-        
+
+        .animation-delay-100 {
+          animation-delay: 100ms;
+        }
+
         .animation-delay-200 {
           animation-delay: 200ms;
         }
-        
+
+        .animation-delay-300 {
+          animation-delay: 300ms;
+        }
+
         .animation-delay-400 {
           animation-delay: 400ms;
         }
-        
+
+        .animation-delay-500 {
+          animation-delay: 500ms;
+        }
+
         .animation-delay-600 {
           animation-delay: 600ms;
         }
-        
+
         .animation-delay-800 {
           animation-delay: 800ms;
         }
-        
+
         .bg-gradient-radial {
           background: radial-gradient(circle at center, var(--tw-gradient-from), var(--tw-gradient-via), var(--tw-gradient-to));
         }
-        
+
         .bg-size-200 {
           background-size: 200% 200%;
         }

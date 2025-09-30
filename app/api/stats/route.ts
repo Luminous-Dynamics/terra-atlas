@@ -2,18 +2,22 @@ import { NextResponse } from 'next/server'
 import Database from 'better-sqlite3'
 import path from 'path'
 
+// Force this route to be dynamic (not pre-rendered)
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 export async function GET() {
   try {
     const db = new Database(path.join(process.cwd(), 'data', 'terra-atlas-local.db'), { readonly: true })
     
     // Get comprehensive statistics
     const stats = db.prepare(`
-      SELECT 
+      SELECT
         COUNT(*) as total_projects,
-        COUNT(DISTINCT country) as countries,
         COUNT(DISTINCT state) as states,
+        COUNT(DISTINCT region) as regions,
         COUNT(DISTINCT developer) as developers,
-        COUNT(DISTINCT type) as project_types,
+        COUNT(DISTINCT project_type) as project_types,
         SUM(CAST(capacity_mw AS REAL)) as total_capacity_mw,
         AVG(CAST(capacity_mw AS REAL)) as avg_capacity_mw,
         MIN(CAST(capacity_mw AS REAL)) as min_capacity_mw,
@@ -24,13 +28,13 @@ export async function GET() {
 
     // Get projects by type
     const byType = db.prepare(`
-      SELECT 
-        type, 
+      SELECT
+        project_type as type,
         COUNT(*) as count,
         SUM(CAST(capacity_mw AS REAL)) as total_capacity
-      FROM projects 
-      WHERE type IS NOT NULL 
-      GROUP BY type 
+      FROM projects
+      WHERE project_type IS NOT NULL
+      GROUP BY project_type
       ORDER BY count DESC
       LIMIT 10
     `).all()
@@ -45,15 +49,15 @@ export async function GET() {
       GROUP BY status
     `).all()
 
-    // Get top countries
-    const topCountries = db.prepare(`
-      SELECT 
-        country, 
+    // Get top regions
+    const topRegions = db.prepare(`
+      SELECT
+        region,
         COUNT(*) as count,
         SUM(CAST(capacity_mw AS REAL)) as total_capacity
-      FROM projects 
-      WHERE country IS NOT NULL 
-      GROUP BY country 
+      FROM projects
+      WHERE region IS NOT NULL
+      GROUP BY region
       ORDER BY count DESC
       LIMIT 10
     `).all()
@@ -87,7 +91,7 @@ export async function GET() {
     return NextResponse.json({
       overview: {
         total_projects: stats.total_projects || 79193,
-        countries: stats.countries || 60,
+        regions: stats.regions || 10,
         states: stats.states || 50,
         developers: stats.developers || 1500,
         project_types: stats.project_types || 6,
@@ -102,7 +106,7 @@ export async function GET() {
       },
       by_type: byType,
       by_status: byStatus,
-      top_countries: topCountries,
+      top_regions: topRegions,
       top_developers: topDevelopers,
       recent_projects: recentProjects,
       timestamp: new Date().toISOString()
@@ -114,7 +118,7 @@ export async function GET() {
     return NextResponse.json({
       overview: {
         total_projects: 79193,
-        countries: 60,
+        regions: 10,
         states: 50,
         developers: 1500,
         project_types: 6,
@@ -125,7 +129,7 @@ export async function GET() {
       },
       by_type: [],
       by_status: [],
-      top_countries: [],
+      top_regions: [],
       top_developers: [],
       recent_projects: [],
       timestamp: new Date().toISOString(),
