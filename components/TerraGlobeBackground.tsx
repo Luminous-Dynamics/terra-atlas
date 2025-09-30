@@ -290,45 +290,26 @@ export default function TerraGlobeBackground() {
         const score = site.score || 75
         const scoreNormalized = score / 100 // 0-1 range
         
-        // Size based on both capacity and intelligence score
-        // Larger points on mobile for better visibility
-        const sizeMultiplier = isMobile ? 0.25 : 0.15
+        // Subtle, elegant points - not overwhelming
+        const sizeMultiplier = isMobile ? 0.18 : 0.10
         const baseSize = Math.log10(site.capacity + 1) * sizeMultiplier
-        // Higher scores get up to 50% larger
-        const scoreBoost = 1 + (scoreNormalized * 0.5)
+        // Gentle size variation based on score
+        const scoreBoost = 1 + (scoreNormalized * 0.25)
         const size = baseSize * scoreBoost
         
-        // Colors for each type with intelligence score brightness boost
+        // Softer, more natural colors that don't overwhelm the Earth
         const baseColors = {
-          solar: '#fbbf24',     // Warm amber for solar
-          wind: '#60a5fa',      // Sky blue for wind
-          hydro: '#34d399',     // Emerald for hydro
-          geothermal: '#f97316' // Orange for geothermal
+          solar: 'rgba(251, 191, 36, 0.75)',      // Soft amber
+          wind: 'rgba(96, 165, 250, 0.75)',       // Gentle sky blue
+          hydro: 'rgba(52, 211, 153, 0.75)',      // Calm emerald
+          geothermal: 'rgba(249, 115, 22, 0.75)'  // Warm orange
         }
-        
-        // Enhance color brightness based on score
-        const baseColor = baseColors[site.type] || '#ffffff'
-        // Convert hex to RGB for manipulation
-        const hexToRgb = (hex: string) => {
-          const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-          return result ? {
-            r: parseInt(result[1], 16),
-            g: parseInt(result[2], 16),
-            b: parseInt(result[3], 16)
-          } : { r: 255, g: 255, b: 255 }
-        }
-        
-        const rgb = hexToRgb(baseColor)
-        // Brighten color based on score (higher scores are brighter)
-        const brightnessFactor = 1 + (scoreNormalized * 0.3) // Up to 30% brighter
-        const brightR = Math.min(255, Math.round(rgb.r * brightnessFactor))
-        const brightG = Math.min(255, Math.round(rgb.g * brightnessFactor))
-        const brightB = Math.min(255, Math.round(rgb.b * brightnessFactor))
-        const enhancedColor = `rgb(${brightR}, ${brightG}, ${brightB})`
-        
-        // Altitude based on intelligence score - higher scores float higher
-        const baseAltitude = 0.01
-        const scoreAltitude = scoreNormalized * 0.04 // Up to 0.04 additional altitude
+
+        const enhancedColor = baseColors[site.type] || 'rgba(255, 255, 255, 0.75)'
+
+        // Very subtle altitude variation - keep points close to surface
+        const baseAltitude = 0.005
+        const scoreAltitude = scoreNormalized * 0.015
         const altitude = baseAltitude + scoreAltitude
         
         return {
@@ -341,47 +322,15 @@ export default function TerraGlobeBackground() {
         }
       })
       
-      // Get time-based colors and settings
-      const getTimeBasedSettings = () => {
-        switch(timeOfDay) {
-          case 'dawn':
-            return {
-              atmosphere: '#f59e0b', // Amber sunrise
-              globeImage: '//unpkg.com/three-globe/example/img/earth-blue-marble.jpg',
-              altitude: 0.22
-            }
-          case 'day':
-            return {
-              atmosphere: '#10b981', // Green energy
-              globeImage: '//unpkg.com/three-globe/example/img/earth-blue-marble.jpg',
-              altitude: 0.25
-            }
-          case 'dusk':
-            return {
-              atmosphere: '#8b5cf6', // Purple sunset
-              globeImage: '//unpkg.com/three-globe/example/img/earth-night.jpg',
-              altitude: 0.23
-            }
-          case 'night':
-            return {
-              atmosphere: '#3b82f6', // Blue night glow
-              globeImage: '//unpkg.com/three-globe/example/img/earth-night.jpg',
-              altitude: 0.20
-            }
-        }
-      }
-      
-      const settings = getTimeBasedSettings()
-      
+      // Beautiful, calm Earth with natural atmosphere
       const globe = Globe()(globeEl.current)
-        .globeImageUrl(settings.globeImage)
-        .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
-        // IMPORTANT: Set backgroundImageUrl to null to remove stars
-        .backgroundImageUrl(null) // Remove the starry background
-        .backgroundColor('rgba(0, 0, 0, 0)') // Transparent to show our gradient
+        .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg') // Always show beautiful Earth
+        .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png') // Terrain depth
+        .backgroundImageUrl(null) // Clean space background
+        .backgroundColor('rgba(0, 0, 0, 0)') // Transparent
         .showAtmosphere(true)
-        .atmosphereColor(settings.atmosphere) // Time-based atmosphere color
-        .atmosphereAltitude(settings.altitude)
+        .atmosphereColor('#4a90e2') // Calm, natural blue atmosphere like real Earth
+        .atmosphereAltitude(0.15) // Subtle, realistic atmosphere glow
         .pointsData(preparedSites)
         .pointLat('lat')
         .pointLng('lng')
@@ -473,57 +422,41 @@ export default function TerraGlobeBackground() {
         })
         
       // Set initial view - perfectly centered with optimal distance
-      globe.pointOfView({ lat: 10, lng: 0, altitude: 1.8 }, 0)
-      
-      // Slow, mesmerizing rotation
+      globe.pointOfView({ lat: 10, lng: 0, altitude: 2.2 }, 0) // Further back to see the whole Earth
+
+      // Very slow, peaceful rotation - like watching Earth from space
       globe.controls().autoRotate = true
-      globe.controls().autoRotateSpeed = 0.15 // Ultra slow for maximum meditation
-      globe.controls().enableZoom = false
+      globe.controls().autoRotateSpeed = 0.08 // Ultra slow, meditative rotation
+      globe.controls().enableZoom = true // Allow gentle zoom
       globe.controls().enablePan = false
-      globe.controls().rotateSpeed = 0.3 // Even slower manual rotation if interaction enabled
+      globe.controls().rotateSpeed = 0.2 // Gentle manual rotation
       
-      // Enhanced pulsing rings with energy-specific colors and patterns
-      // Reduce rings on mobile for performance
-      const capacityThreshold = isMobile ? 2000 : 500
+      // Gentle, subtle pulsing rings - only for major projects
+      const capacityThreshold = isMobile ? 5000 : 2000 // Only show rings for larger projects
       const ringsData = preparedSites.filter(site => site.capacity > capacityThreshold).map(site => {
-        // Use intelligence score to influence ring animation speed
-        // Higher scores = faster pulsing (more urgent/important)
-        const speedMultiplier = 1 + ((site.scoreNormalized || 0.75) * 0.5) // 1.0x to 1.5x based on score
-        
-        // Different ring patterns for different energy types
+        // Very slow, calming pulse animation
+        const speedMultiplier = 0.5 // Slow and serene
+
+        // Gentle ring patterns
         const getRingConfig = () => {
+          const baseConfig = {
+            maxR: site.size * 12, // Smaller rings
+            propagationSpeed: 0.3 * speedMultiplier, // Very slow
+            repeatPeriod: 8000 + Math.random() * 4000, // 8-12 second intervals
+          }
+
           switch(site.type) {
             case 'solar':
-              return {
-                maxR: site.size * 20,
-                propagationSpeed: 0.8 * speedMultiplier,
-                repeatPeriod: (3000 + Math.random() * 1000) / speedMultiplier,
-                color: 'rgba(251, 191, 36, 0.6)'
-              }
+              return { ...baseConfig, color: 'rgba(251, 191, 36, 0.25)' } // Very subtle
             case 'wind':
-              return {
-                maxR: site.size * 18,
-                propagationSpeed: 1.0 * speedMultiplier,
-                repeatPeriod: (2500 + Math.random() * 1000) / speedMultiplier,
-                color: 'rgba(96, 165, 250, 0.6)'
-              }
+              return { ...baseConfig, color: 'rgba(96, 165, 250, 0.25)' }
             case 'hydro':
-              return {
-                maxR: site.size * 22,
-                propagationSpeed: 0.6 * speedMultiplier,
-                repeatPeriod: (3500 + Math.random() * 1000) / speedMultiplier,
-                color: 'rgba(52, 211, 153, 0.6)'
-              }
+              return { ...baseConfig, color: 'rgba(52, 211, 153, 0.25)' }
             default: // geothermal
-              return {
-                maxR: site.size * 16,
-                propagationSpeed: 0.4 * speedMultiplier,
-                repeatPeriod: (4000 + Math.random() * 1000) / speedMultiplier,
-                color: 'rgba(249, 115, 22, 0.6)'
-              }
+              return { ...baseConfig, color: 'rgba(249, 115, 22, 0.25)' }
           }
         }
-        
+
         const config = getRingConfig()
         return {
           lat: site.lat,
@@ -538,60 +471,14 @@ export default function TerraGlobeBackground() {
         .ringPropagationSpeed('propagationSpeed')
         .ringRepeatPeriod('repeatPeriod')
         .ringColor((ring) => (t) => {
-          // Extract base color and apply fade
-          const color = ring.color || 'rgba(96, 165, 250, 0.6)'
-          const opacity = (1 - t) * 0.6
+          // Gentle fade for rings
+          const color = ring.color || 'rgba(96, 165, 250, 0.25)'
+          const opacity = (1 - t) * 0.25 // Very subtle
           return color.replace(/[\d.]+\)$/, `${opacity})`)
         })
-      
-      // Add dynamic energy flow lines between major projects
-      // Reduce arcs on mobile for better performance
-      const arcsData = []
-      const majorSites = preparedSites.filter(site => site.capacity > (isMobile ? 5000 : 2000))
-      
-      // Create interconnected network of energy flows (fewer on mobile)
-      const maxConnections = isMobile ? 1 : 3
-      for (let i = 0; i < majorSites.length; i++) {
-        // Connect to fewer sites on mobile
-        const connections = Math.min(Math.floor(Math.random() * 2) + 1, maxConnections)
-        for (let j = 0; j < connections; j++) {
-          const targetIndex = (i + j + 1 + Math.floor(Math.random() * 3)) % majorSites.length
-          if (targetIndex !== i) {
-            const startSite = majorSites[i]
-            const endSite = majorSites[targetIndex]
-            
-            // Color based on energy type
-            const getArcColor = () => {
-              if (startSite.type === 'solar') return ['rgba(251, 191, 36, 0.4)', 'rgba(251, 191, 36, 0.1)']
-              if (startSite.type === 'wind') return ['rgba(96, 165, 250, 0.4)', 'rgba(96, 165, 250, 0.1)']
-              if (startSite.type === 'hydro') return ['rgba(52, 211, 153, 0.4)', 'rgba(52, 211, 153, 0.1)']
-              return ['rgba(249, 115, 22, 0.4)', 'rgba(249, 115, 22, 0.1)'] // geothermal
-            }
-            
-            arcsData.push({
-              startLat: startSite.lat,
-              startLng: startSite.lng,
-              endLat: endSite.lat,
-              endLng: endSite.lng,
-              color: getArcColor(),
-              stroke: 0.5 + (startSite.capacity / 20000), // Thicker for larger capacity
-              dashLength: 0.3,
-              dashGap: 0.1,
-              animateTime: 2000 + Math.random() * 2000 // Varied animation speeds
-            })
-          }
-        }
-      }
-      
-      globe
-        .arcsData(arcsData)
-        .arcColor('color')
-        .arcDashLength('dashLength')
-        .arcDashGap('dashGap')
-        .arcDashAnimateTime('animateTime')
-        .arcStroke('stroke')
-        .arcAltitudeAutoScale(0.3)
-        .arcsTransitionDuration(1000)
+
+      // Remove arcs to keep Earth view clean and uncluttered
+      globe.arcsData([])
       
       globeRef.current = globe
       
@@ -640,67 +527,15 @@ export default function TerraGlobeBackground() {
       />
       
       <div className="absolute inset-0">
-        {/* Time-based gradient background */}
-        <div className={`absolute inset-0 transition-all duration-[10000ms] ${
-          timeOfDay === 'dawn' 
-            ? 'bg-gradient-to-b from-amber-900/50 via-orange-950/40 to-slate-900/30'
-            : timeOfDay === 'day'
-            ? 'bg-gradient-to-b from-slate-900 via-teal-950/40 to-emerald-950/30'
-            : timeOfDay === 'dusk'
-            ? 'bg-gradient-to-b from-purple-900/50 via-indigo-950/40 to-slate-900/30'
-            : 'bg-gradient-to-b from-slate-950 via-blue-950/60 to-indigo-950/40'
-        }`} />
-        
-        {/* Time-based animated gradient overlays */}
-        <div className="absolute inset-0">
-          {timeOfDay === 'dawn' && (
-            <>
-              {/* Sunrise colors */}
-              <div className="absolute inset-0 opacity-25">
-                <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/40 via-transparent to-orange-500/30 animate-pulse" style={{ animationDuration: '15s' }} />
-              </div>
-              <div className="absolute inset-0 opacity-20">
-                <div className="absolute inset-0 bg-gradient-to-bl from-yellow-500/30 via-amber-500/20 to-transparent animate-pulse" style={{ animationDuration: '20s', animationDelay: '5s' }} />
-              </div>
-            </>
-          )}
-          {timeOfDay === 'day' && (
-            <>
-              {/* Day energy colors */}
-              <div className="absolute inset-0 opacity-20">
-                <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/30 via-transparent to-teal-500/20 animate-pulse" style={{ animationDuration: '15s' }} />
-              </div>
-              <div className="absolute inset-0 opacity-15">
-                <div className="absolute inset-0 bg-gradient-to-bl from-blue-500/20 via-cyan-500/10 to-transparent animate-pulse" style={{ animationDuration: '20s', animationDelay: '5s' }} />
-              </div>
-            </>
-          )}
-          {timeOfDay === 'dusk' && (
-            <>
-              {/* Sunset colors */}
-              <div className="absolute inset-0 opacity-25">
-                <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/35 via-transparent to-pink-500/25 animate-pulse" style={{ animationDuration: '18s' }} />
-              </div>
-              <div className="absolute inset-0 opacity-20">
-                <div className="absolute inset-0 bg-gradient-to-bl from-indigo-500/25 via-purple-500/15 to-transparent animate-pulse" style={{ animationDuration: '22s', animationDelay: '7s' }} />
-              </div>
-            </>
-          )}
-          {timeOfDay === 'night' && (
-            <>
-              {/* Night aurora colors */}
-              <div className="absolute inset-0 opacity-15">
-                <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/25 via-transparent to-indigo-600/20 animate-pulse" style={{ animationDuration: '25s' }} />
-              </div>
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute inset-0 bg-gradient-to-bl from-indigo-500/15 via-blue-500/10 to-transparent animate-pulse" style={{ animationDuration: '30s', animationDelay: '10s' }} />
-              </div>
-            </>
-          )}
-          {/* Layer 3: Subtle solar glow from bottom */}
-          <div className="absolute bottom-0 left-0 right-0 h-1/2 opacity-30">
-            <div className="absolute inset-0 bg-gradient-to-t from-amber-900/20 via-transparent to-transparent" />
-          </div>
+        {/* Clean, calming space gradient - like viewing Earth from orbit */}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950" />
+
+        {/* Subtle ambient light - very gentle */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/20 via-transparent to-transparent animate-pulse" style={{ animationDuration: '30s' }} />
+        </div>
+        <div className="absolute bottom-0 left-0 right-0 h-1/2 opacity-5">
+          <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/20 via-transparent to-transparent" />
         </div>
         
         {/* Globe container - Perfectly Centered with Optimal Scaling */}
