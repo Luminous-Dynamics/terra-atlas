@@ -27,12 +27,13 @@ export default function ProfessionalGlobe({ projects = [] }: ProfessionalGlobePr
     try {
       // Scene setup
       const scene = new THREE.Scene()
+      scene.background = new THREE.Color(0x000000) // Black space background
 
-      // Camera setup
+      // Camera setup - closer for bigger globe
       const width = containerRef.current.clientWidth
       const height = containerRef.current.clientHeight
       const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000)
-      camera.position.set(0, 0, 2.2)
+      camera.position.set(0, 0, 1.6)
 
       // Renderer setup with WebGL fallback
       try {
@@ -53,6 +54,50 @@ export default function ProfessionalGlobe({ projects = [] }: ProfessionalGlobePr
 
       // Earth geometry - higher detail
       const geometry = new THREE.SphereGeometry(1, 128, 128)
+
+      // Create star field
+      const starsGeometry = new THREE.BufferGeometry()
+      const starsMaterial = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 2,
+        sizeAttenuation: true
+      })
+
+      const starsVertices = []
+      for (let i = 0; i < 10000; i++) {
+        const x = (Math.random() - 0.5) * 2000
+        const y = (Math.random() - 0.5) * 2000
+        const z = (Math.random() - 0.5) * 2000
+        starsVertices.push(x, y, z)
+      }
+
+      starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3))
+      const starField = new THREE.Points(starsGeometry, starsMaterial)
+      scene.add(starField)
+
+      // Create atmosphere glow
+      const atmosphereGeometry = new THREE.SphereGeometry(1.15, 64, 64)
+      const atmosphereMaterial = new THREE.ShaderMaterial({
+        vertexShader: `
+          varying vec3 vNormal;
+          void main() {
+            vNormal = normalize(normalMatrix * normal);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vNormal;
+          void main() {
+            float intensity = pow(0.6 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+            gl_FragColor = vec4(0.3, 0.6, 1.0, 1.0) * intensity;
+          }
+        `,
+        blending: THREE.AdditiveBlending,
+        side: THREE.BackSide,
+        transparent: true
+      })
+      const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial)
+      scene.add(atmosphere)
 
       // Load Earth texture with fallback
       const textureLoader = new THREE.TextureLoader()
@@ -92,6 +137,8 @@ export default function ProfessionalGlobe({ projects = [] }: ProfessionalGlobePr
 
             animationId = requestAnimationFrame(animate)
             earth.rotation.y += 0.002
+            atmosphere.rotation.y += 0.001
+            starField.rotation.y += 0.0001
             renderer.render(scene, camera)
           }
           animate()
@@ -130,6 +177,8 @@ export default function ProfessionalGlobe({ projects = [] }: ProfessionalGlobePr
 
             animationId = requestAnimationFrame(animate)
             earth.rotation.y += 0.002
+            atmosphere.rotation.y += 0.001
+            starField.rotation.y += 0.0001
             renderer.render(scene, camera)
           }
           animate()
