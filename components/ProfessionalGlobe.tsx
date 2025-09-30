@@ -31,8 +31,8 @@ export default function ProfessionalGlobe({ projects = [] }: ProfessionalGlobePr
       // Camera setup
       const width = containerRef.current.clientWidth
       const height = containerRef.current.clientHeight
-      const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000)
-      camera.position.z = 2.5
+      const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000)
+      camera.position.set(0, 0, 2.2)
 
       // Renderer setup with WebGL fallback
       try {
@@ -51,8 +51,8 @@ export default function ProfessionalGlobe({ projects = [] }: ProfessionalGlobePr
         return
       }
 
-      // Earth geometry
-      const geometry = new THREE.SphereGeometry(1, 64, 64)
+      // Earth geometry - higher detail
+      const geometry = new THREE.SphereGeometry(1, 128, 128)
 
       // Load Earth texture with fallback
       const textureLoader = new THREE.TextureLoader()
@@ -61,29 +61,37 @@ export default function ProfessionalGlobe({ projects = [] }: ProfessionalGlobePr
         '/globe-textures/earth-blue-marble.jpg',
         (texture) => {
           // Success - create material with texture
+          texture.anisotropy = renderer!.capabilities.getMaxAnisotropy()
+
           const material = new THREE.MeshStandardMaterial({
             map: texture,
-            roughness: 0.8,
-            metalness: 0.2
+            roughness: 0.9,
+            metalness: 0.1,
+            emissive: 0x112244,
+            emissiveIntensity: 0.05
           })
 
           const earth = new THREE.Mesh(geometry, material)
           scene.add(earth)
 
-          // Lighting
-          const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
-          const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+          // Better lighting setup
+          const ambientLight = new THREE.AmbientLight(0xffffff, 1.0)
+          const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2)
           directionalLight.position.set(5, 3, 5)
-          scene.add(ambientLight, directionalLight)
+
+          const fillLight = new THREE.DirectionalLight(0x4488ff, 0.3)
+          fillLight.position.set(-5, -3, -5)
+
+          scene.add(ambientLight, directionalLight, fillLight)
 
           setLoading(false)
 
-          // Animation loop
+          // Animation loop with smooth rotation
           const animate = () => {
             if (!renderer) return
 
             animationId = requestAnimationFrame(animate)
-            earth.rotation.y += 0.001
+            earth.rotation.y += 0.002
             renderer.render(scene, camera)
           }
           animate()
@@ -92,30 +100,36 @@ export default function ProfessionalGlobe({ projects = [] }: ProfessionalGlobePr
         (err) => {
           console.error('Failed to load Earth texture:', err)
 
-          // Fallback: use solid color if texture fails
+          // Fallback: use beautiful gradient if texture fails
           const fallbackMaterial = new THREE.MeshStandardMaterial({
-            color: 0x2563eb, // Blue color
-            roughness: 0.8,
-            metalness: 0.2
+            color: 0x1e40af,
+            roughness: 0.9,
+            metalness: 0.1,
+            emissive: 0x1e3a8a,
+            emissiveIntensity: 0.1
           })
 
           const earth = new THREE.Mesh(geometry, fallbackMaterial)
           scene.add(earth)
 
-          // Lighting
-          const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
-          const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+          // Better lighting setup
+          const ambientLight = new THREE.AmbientLight(0xffffff, 1.0)
+          const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2)
           directionalLight.position.set(5, 3, 5)
-          scene.add(ambientLight, directionalLight)
+
+          const fillLight = new THREE.DirectionalLight(0x4488ff, 0.3)
+          fillLight.position.set(-5, -3, -5)
+
+          scene.add(ambientLight, directionalLight, fillLight)
 
           setLoading(false)
 
-          // Animation loop
+          // Animation loop with smooth rotation
           const animate = () => {
             if (!renderer) return
 
             animationId = requestAnimationFrame(animate)
-            earth.rotation.y += 0.001
+            earth.rotation.y += 0.002
             renderer.render(scene, camera)
           }
           animate()
