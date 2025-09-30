@@ -290,8 +290,8 @@ export default function TerraGlobeBackground() {
         const score = site.score || 75
         const scoreNormalized = score / 100 // 0-1 range
         
-        // Ultra-subtle points that show Earth texture clearly
-        const sizeMultiplier = isMobile ? 0.03 : 0.02  // Much smaller - was 0.18/0.10
+        // DEBUG: Make points TINY to see if globe is hidden underneath
+        const sizeMultiplier = isMobile ? 0.0005 : 0.0003  // 100x smaller!
         const baseSize = Math.log10(site.capacity + 1) * sizeMultiplier
         // Gentle size variation based on score
         const scoreBoost = 1 + (scoreNormalized * 0.25)
@@ -299,17 +299,17 @@ export default function TerraGlobeBackground() {
 
         // More transparent colors to let Earth show through
         const baseColors = {
-          solar: 'rgba(251, 191, 36, 0.4)',      // More transparent
-          wind: 'rgba(96, 165, 250, 0.4)',       // More transparent
-          hydro: 'rgba(52, 211, 153, 0.4)',      // More transparent
-          geothermal: 'rgba(249, 115, 22, 0.4)'  // More transparent
+          solar: 'rgba(251, 191, 36, 0.8)',      // Increase opacity to see tiny points
+          wind: 'rgba(96, 165, 250, 0.8)',       // Increase opacity
+          hydro: 'rgba(52, 211, 153, 0.8)',      // Increase opacity
+          geothermal: 'rgba(249, 115, 22, 0.8)'  // Increase opacity
         }
 
-        const enhancedColor = baseColors[site.type] || 'rgba(255, 255, 255, 0.4)'
+        const enhancedColor = baseColors[site.type] || 'rgba(255, 255, 255, 0.8)'
 
-        // Lift points higher off surface to reveal Earth
-        const baseAltitude = 0.01  // Was 0.005
-        const scoreAltitude = scoreNormalized * 0.02  // Was 0.015
+        // Keep points very close to surface
+        const baseAltitude = 0.001  // Much closer to surface
+        const scoreAltitude = scoreNormalized * 0.002  // Minimal lift
         const altitude = baseAltitude + scoreAltitude
         
         return {
