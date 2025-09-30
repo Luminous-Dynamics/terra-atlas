@@ -322,27 +322,17 @@ export default function TerraGlobeBackground() {
         }
       })
       
-      // Beautiful Earth with natural atmosphere
-      // Using locally hosted textures for 100% reliability
-      const textureUrls = {
-        earth: '/globe-textures/earth-blue-marble.jpg',
-        topology: '/globe-textures/earth-topology.png'
-      }
-
+      // Debug: Start with NO textures, just solid material
+      // Once this works, we'll add textures back
       const globe = Globe()(globeEl.current)
-        .globeImageUrl(textureUrls.earth) // Local texture - always available
-        .bumpImageUrl(textureUrls.topology) // Local texture - always available
+        .globeImageUrl(null as any) // No texture - use material only
+        .bumpImageUrl(null as any) // No bump map
         .backgroundImageUrl(null) // Clean space background
         .backgroundColor('rgba(0, 0, 0, 0)') // Transparent
         .showAtmosphere(true)
         .atmosphereColor('#4a90e2') // Calm, natural blue atmosphere
         .atmosphereAltitude(0.15) // Subtle atmosphere glow
         .showGlobe(true) // Explicitly enable globe rendering
-        .globeMaterial(new (window as any).THREE.MeshPhongMaterial({
-          color: '#1e3a8a', // Debug: solid dark blue to verify globe renders
-          opacity: 1.0,
-          transparent: false
-        }))
         .pointsData(preparedSites)
         .pointLat('lat')
         .pointLng('lng')
