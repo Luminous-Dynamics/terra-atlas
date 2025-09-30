@@ -26,9 +26,9 @@ export default function SimpleSpinningGlobe() {
         const scene = new THREE.Scene()
         scene.background = new THREE.Color(0x000000)
 
-        // Camera - closer for bigger globe
+        // Camera - balanced distance for elegant globe
         const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000)
-        camera.position.z = 1.6
+        camera.position.z = 2.2
 
         // Try to create WebGL renderer
         try {
@@ -160,6 +160,61 @@ export default function SimpleSpinningGlobe() {
 
             const earth = new THREE.Mesh(geometry, material)
             scene.add(earth)
+
+            // Add city lights for night time
+            if (timeOfDay === 'night' || timeOfDay === 'dusk') {
+              // Create a slightly smaller sphere for city lights to sit just above surface
+              const lightsGeometry = new THREE.SphereGeometry(1.002, 128, 128)
+
+              // City lights appear as emissive glow on dark side
+              const lightsMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffaa00,
+                transparent: true,
+                opacity: timeOfDay === 'night' ? 0.8 : 0.4,
+                blending: THREE.AdditiveBlending
+              })
+
+              // Use a simple noise pattern for city distribution
+              // In production, you'd use an actual city lights texture
+              const cityLights = new THREE.Mesh(lightsGeometry, lightsMaterial)
+
+              // Only show on the dark side (opposite to sun)
+              cityLights.rotation.y = Math.PI // Rotate to show on opposite side
+
+              scene.add(cityLights)
+
+              // Add warm glow around cities
+              const glowGeometry = new THREE.SphereGeometry(1.01, 64, 64)
+              const glowMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                  c: { value: 0.2 },
+                  p: { value: 3.5 }
+                },
+                vertexShader: `
+                  varying vec3 vNormal;
+                  void main() {
+                    vNormal = normalize(normalMatrix * normal);
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                  }
+                `,
+                fragmentShader: `
+                  uniform float c;
+                  uniform float p;
+                  varying vec3 vNormal;
+                  void main() {
+                    float intensity = pow(c - dot(vNormal, vec3(0.0, 0.0, 1.0)), p);
+                    gl_FragColor = vec4(1.0, 0.8, 0.3, 1.0) * intensity;
+                  }
+                `,
+                side: THREE.BackSide,
+                blending: THREE.AdditiveBlending,
+                transparent: true
+              })
+
+              const cityGlow = new THREE.Mesh(glowGeometry, glowMaterial)
+              cityGlow.rotation.y = Math.PI
+              scene.add(cityGlow)
+            }
 
             // Time-based lighting intensity
             const lightIntensity = {

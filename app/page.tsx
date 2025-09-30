@@ -163,13 +163,14 @@ export default function Homepage() {
         </div>
       </nav>
 
-      {/* Hero Section - Enhanced Globe-Centered Design */}
+      {/* Hero Section - Serene & Beautiful Design */}
       <section className="relative min-h-screen overflow-hidden">
-        {/* Animated Background Gradient */}
+        {/* Calming Background Gradient - Soft & Peaceful */}
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-950 via-black to-cyan-950 opacity-50" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-cyan-900/20 via-transparent to-transparent" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-950 to-emerald-950 opacity-60" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-transparent to-transparent animate-pulse-slower" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-emerald-900/10 via-transparent to-transparent animate-pulse-slow" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/5 via-transparent to-transparent" />
         </div>
         
         {/* Globe Background - Perfectly Centered and Prominent */}
@@ -194,37 +195,41 @@ export default function Homepage() {
           {/* Top Section - Mobile Optimized Hero */}
           <div className="flex-1 flex flex-col justify-start pt-20 sm:pt-24 md:pt-32 px-4 sm:px-6">
             <div className="text-center max-w-5xl mx-auto">
-              {/* Tagline Above - Mobile Friendly */}
-              <div className="mb-4 sm:mb-6 animate-fade-in-up">
-                <span className="inline-block px-4 sm:px-6 py-1.5 sm:py-2 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 backdrop-blur-sm border border-emerald-400/20 rounded-full text-xs sm:text-sm font-medium text-emerald-300/90 tracking-wide">
-                  Global Energy Investment Platform
+              {/* Tagline Above - Inspiring & Calm */}
+              <div className="mb-6 sm:mb-8 animate-fade-in-up">
+                <span className="inline-block px-5 sm:px-7 py-2 sm:py-2.5 bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-blue-500/10 backdrop-blur-md border border-emerald-400/30 rounded-full text-xs sm:text-sm font-light text-emerald-200 tracking-wider shadow-lg shadow-emerald-500/10">
+                  ✨ Building Tomorrow's Clean Energy, Together
                 </span>
               </div>
 
-              {/* Main Headline - Responsive Typography */}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight mb-4 sm:mb-6 animate-fade-in-up animation-delay-100 px-2">
-                <span className="block text-white mb-1 sm:mb-2">
-                  Invest in Clean Energy
+              {/* Main Headline - Beautiful & Hopeful */}
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-light leading-tight mb-6 sm:mb-8 animate-fade-in-up animation-delay-100 px-2">
+                <span className="block text-white/95 mb-2 sm:mb-3 font-extralight">
+                  Your Planet.
                 </span>
-                <span className="block bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent animate-gradient-flow bg-size-200">
-                  Starting at $10
+                <span className="block text-white/95 mb-2 sm:mb-3 font-extralight">
+                  Your Future.
+                </span>
+                <span className="block bg-gradient-to-r from-emerald-300 via-cyan-300 to-blue-300 bg-clip-text text-transparent animate-gradient-flow bg-size-200 font-normal">
+                  Your Investment.
                 </span>
               </h1>
 
-              {/* Subheadline - Mobile Optimized */}
-              <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/70 font-light leading-relaxed mb-6 sm:mb-8 max-w-3xl mx-auto animate-fade-in-up animation-delay-200 px-2">
-                AI-powered platform analyzing <span className="text-emerald-400 font-medium whitespace-nowrap">4M+ renewable projects</span> worldwide.
-                <span className="hidden sm:inline"> Earn <span className="text-cyan-400 font-medium whitespace-nowrap">11-14% returns</span> while building a sustainable future.</span>
-                <span className="sm:hidden block mt-2">Earn <span className="text-cyan-400 font-medium">11-14% returns</span>.</span>
+              {/* Subheadline - Inspiring & Peaceful */}
+              <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white/60 font-extralight leading-relaxed mb-8 sm:mb-10 max-w-4xl mx-auto animate-fade-in-up animation-delay-200 px-4">
+                <span className="block mb-3">Join thousands investing in clean energy projects worldwide.</span>
+                <span className="block text-base sm:text-lg md:text-xl text-white/50">
+                  From <span className="text-emerald-300 font-light">$10</span>, earn <span className="text-cyan-300 font-light">11-14% returns</span> while healing our planet.
+                </span>
               </p>
 
-              {/* Technology Badges - Mobile Scrollable */}
-              <div className="flex flex-wrap justify-center gap-2 sm:gap-3 text-xs sm:text-sm text-white/50 animate-fade-in-up animation-delay-300 px-2">
-                <span className="px-3 sm:px-4 py-1.5 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full whitespace-nowrap">☀️ Solar</span>
-                <span className="px-3 sm:px-4 py-1.5 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full whitespace-nowrap">💨 Wind</span>
-                <span className="px-3 sm:px-4 py-1.5 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full whitespace-nowrap">💧 Hydro</span>
-                <span className="px-3 sm:px-4 py-1.5 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full whitespace-nowrap">⚛️ Nuclear</span>
-                <span className="px-3 sm:px-4 py-1.5 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full whitespace-nowrap">🔋 Storage</span>
+              {/* Energy Types - Beautiful & Inspiring */}
+              <div className="flex flex-wrap justify-center gap-3 sm:gap-4 text-sm sm:text-base text-white/60 animate-fade-in-up animation-delay-300 px-2">
+                <span className="px-4 sm:px-5 py-2 bg-gradient-to-br from-amber-500/10 to-orange-500/10 backdrop-blur-md border border-amber-400/20 rounded-full whitespace-nowrap hover:border-amber-400/40 hover:bg-amber-500/15 transition-all shadow-lg shadow-amber-500/5">☀️ Solar</span>
+                <span className="px-4 sm:px-5 py-2 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 backdrop-blur-md border border-cyan-400/20 rounded-full whitespace-nowrap hover:border-cyan-400/40 hover:bg-cyan-500/15 transition-all shadow-lg shadow-cyan-500/5">💨 Wind</span>
+                <span className="px-4 sm:px-5 py-2 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 backdrop-blur-md border border-blue-400/20 rounded-full whitespace-nowrap hover:border-blue-400/40 hover:bg-blue-500/15 transition-all shadow-lg shadow-blue-500/5">💧 Hydro</span>
+                <span className="px-4 sm:px-5 py-2 bg-gradient-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-md border border-purple-400/20 rounded-full whitespace-nowrap hover:border-purple-400/40 hover:bg-purple-500/15 transition-all shadow-lg shadow-purple-500/5">⚛️ Nuclear</span>
+                <span className="px-4 sm:px-5 py-2 bg-gradient-to-br from-emerald-500/10 to-green-500/10 backdrop-blur-md border border-emerald-400/20 rounded-full whitespace-nowrap hover:border-emerald-400/40 hover:bg-emerald-500/15 transition-all shadow-lg shadow-emerald-500/5">🔋 Storage</span>
               </div>
             </div>
           </div>
