@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic'
 
 // Dynamic import for custom Three.js globe - full control, no dependencies
 const TerraGlobe = dynamic(
-  () => import('../components/TerraGlobeThree'),
+  () => import('../components/TerraGlobeBackground'),
   {
     ssr: false,
     loading: () => (
