@@ -237,36 +237,44 @@ export default function Homepage() {
           {/* Bottom Section - Clean Stats and CTA - Mobile Optimized */}
           <div className="px-4 sm:px-6 pb-16 sm:pb-20">
             <div className="max-w-6xl mx-auto">
-              {/* Refined Stats Grid - Mobile Responsive */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-10 sm:mb-12 animate-fade-in-up animation-delay-400">
-                <div className="group relative px-4 sm:px-6 py-4 sm:py-6 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl sm:rounded-2xl hover:border-emerald-400/40 hover:bg-white/10 transition-all">
-                  <div className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">10,549</div>
-                  <div className="text-xs sm:text-sm text-white/50 font-medium">Active Projects</div>
+              {/* Beautiful Stats Grid - Inspiring & Calming */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-12 sm:mb-14 animate-fade-in-up animation-delay-400">
+                <div className="group relative px-5 sm:px-7 py-6 sm:py-8 bg-gradient-to-br from-emerald-500/10 to-green-500/5 backdrop-blur-lg border border-emerald-400/30 rounded-2xl hover:border-emerald-400/50 hover:from-emerald-500/15 hover:to-green-500/10 transition-all duration-300 shadow-lg shadow-emerald-500/5">
+                  <div className="text-3xl sm:text-4xl font-light text-white mb-2">10,549</div>
+                  <div className="text-sm sm:text-base text-emerald-200/70 font-light">Projects Worldwide</div>
+                  <div className="absolute top-3 right-3 text-emerald-400/30 text-xl">🌍</div>
                 </div>
-                <div className="group relative px-4 sm:px-6 py-4 sm:py-6 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl sm:rounded-2xl hover:border-cyan-400/40 hover:bg-white/10 transition-all">
-                  <div className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">$10</div>
-                  <div className="text-xs sm:text-sm text-white/50 font-medium">Minimum Entry</div>
+                <div className="group relative px-5 sm:px-7 py-6 sm:py-8 bg-gradient-to-br from-cyan-500/10 to-blue-500/5 backdrop-blur-lg border border-cyan-400/30 rounded-2xl hover:border-cyan-400/50 hover:from-cyan-500/15 hover:to-blue-500/10 transition-all duration-300 shadow-lg shadow-cyan-500/5">
+                  <div className="text-3xl sm:text-4xl font-light text-white mb-2">$10</div>
+                  <div className="text-sm sm:text-base text-cyan-200/70 font-light">Start Investing</div>
+                  <div className="absolute top-3 right-3 text-cyan-400/30 text-xl">✨</div>
                 </div>
-                <div className="group relative px-4 sm:px-6 py-4 sm:py-6 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl sm:rounded-2xl hover:border-purple-400/40 hover:bg-white/10 transition-all">
-                  <div className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">94%</div>
-                  <div className="text-xs sm:text-sm text-white/50 font-medium">AI Accuracy</div>
+                <div className="group relative px-5 sm:px-7 py-6 sm:py-8 bg-gradient-to-br from-purple-500/10 to-pink-500/5 backdrop-blur-lg border border-purple-400/30 rounded-2xl hover:border-purple-400/50 hover:from-purple-500/15 hover:to-pink-500/10 transition-all duration-300 shadow-lg shadow-purple-500/5">
+                  <div className="text-3xl sm:text-4xl font-light text-white mb-2">94%</div>
+                  <div className="text-sm sm:text-base text-purple-200/70 font-light">AI Accuracy</div>
+                  <div className="absolute top-3 right-3 text-purple-400/30 text-xl">🤖</div>
                 </div>
-                <div className="group relative px-4 sm:px-6 py-4 sm:py-6 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl sm:rounded-2xl hover:border-amber-400/40 hover:bg-white/10 transition-all">
-                  <div className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">13.7%</div>
-                  <div className="text-xs sm:text-sm text-white/50 font-medium">Avg Returns</div>
+                <div className="group relative px-5 sm:px-7 py-6 sm:py-8 bg-gradient-to-br from-amber-500/10 to-orange-500/5 backdrop-blur-lg border border-amber-400/30 rounded-2xl hover:border-amber-400/50 hover:from-amber-500/15 hover:to-orange-500/10 transition-all duration-300 shadow-lg shadow-amber-500/5">
+                  <div className="text-3xl sm:text-4xl font-light text-white mb-2">13.7%</div>
+                  <div className="text-sm sm:text-base text-amber-200/70 font-light">Average Returns</div>
+                  <div className="absolute top-3 right-3 text-amber-400/30 text-xl">📈</div>
                 </div>
               </div>
 
-              {/* Primary CTA - Mobile Optimized */}
+              {/* Beautiful CTAs - Inspiring & Peaceful */}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center animate-fade-in-up animation-delay-500 px-2">
                 <Link
                   href="/explore"
                   prefetch={true}
-                  className="group relative px-8 sm:px-10 py-3.5 sm:py-4 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl text-white font-semibold text-sm sm:text-base transition-all hover:shadow-xl hover:shadow-emerald-500/25 hover:-translate-y-0.5 text-center min-h-[48px] flex items-center justify-center"
+                  className="group relative overflow-hidden px-8 sm:px-12 py-4 sm:py-5 bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 rounded-2xl text-white font-light text-base sm:text-lg transition-all hover:shadow-2xl hover:shadow-emerald-500/30 hover:-translate-y-1 hover:scale-[1.02] text-center min-h-[56px] flex items-center justify-center"
                 >
-                  <span className="flex items-center gap-2">
-                    Explore Projects
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {/* Animated gradient background */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                  <span className="relative flex items-center gap-2.5">
+                    <span className="text-xl opacity-90">🌱</span>
+                    Begin Your Impact Journey
+                    <svg className="w-5 h-5 group-hover:translate-x-1.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
                   </span>
@@ -274,30 +282,36 @@ export default function Homepage() {
                 <Link
                   href="/api"
                   prefetch={true}
-                  className="px-8 sm:px-10 py-3.5 sm:py-4 bg-white/5 backdrop-blur-sm border border-white/20 rounded-xl text-white/90 font-semibold text-sm sm:text-base hover:bg-white/10 hover:border-white/30 transition-all text-center min-h-[48px] flex items-center justify-center"
+                  className="group relative overflow-hidden px-8 sm:px-12 py-4 sm:py-5 bg-white/5 backdrop-blur-lg border border-white/20 rounded-2xl text-white/90 font-light text-base sm:text-lg hover:bg-white/10 hover:border-white/40 hover:shadow-xl hover:shadow-white/10 hover:-translate-y-1 transition-all duration-300 text-center min-h-[56px] flex items-center justify-center"
                 >
-                  View API Docs
+                  <span className="relative flex items-center gap-2.5">
+                    <span className="text-xl opacity-80">🔌</span>
+                    Integrate with API
+                    <svg className="w-5 h-5 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </span>
                 </Link>
               </div>
 
-              {/* Trust Badges - Mobile Optimized */}
-              <div className="mt-8 sm:mt-10 flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-white/40 animate-fade-in-up animation-delay-600 px-2">
-                <span className="flex items-center gap-2 whitespace-nowrap">
-                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                  Real-time data
+              {/* Trust Badges - Beautiful & Reassuring */}
+              <div className="mt-10 sm:mt-12 flex flex-wrap justify-center gap-3 sm:gap-4 animate-fade-in-up animation-delay-600 px-2">
+                <span className="group flex items-center gap-2.5 px-4 sm:px-5 py-2.5 bg-emerald-500/5 backdrop-blur-md border border-emerald-400/20 rounded-full text-xs sm:text-sm text-emerald-200/80 font-light whitespace-nowrap hover:bg-emerald-500/10 hover:border-emerald-400/30 transition-all duration-300">
+                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-lg shadow-emerald-400/50" />
+                  Live data streams
                 </span>
-                <span className="flex items-center gap-2 whitespace-nowrap">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span className="group flex items-center gap-2.5 px-4 sm:px-5 py-2.5 bg-cyan-500/5 backdrop-blur-md border border-cyan-400/20 rounded-full text-xs sm:text-sm text-cyan-200/80 font-light whitespace-nowrap hover:bg-cyan-500/10 hover:border-cyan-400/30 transition-all duration-300">
+                  <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
-                  <span className="hidden xs:inline">Bank-grade security</span>
+                  <span className="hidden xs:inline">Bank-level security</span>
                   <span className="xs:hidden">Secure</span>
                 </span>
-                <span className="flex items-center gap-2 whitespace-nowrap">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span className="group flex items-center gap-2.5 px-4 sm:px-5 py-2.5 bg-blue-500/5 backdrop-blur-md border border-blue-400/20 rounded-full text-xs sm:text-sm text-blue-200/80 font-light whitespace-nowrap hover:bg-blue-500/10 hover:border-blue-400/30 transition-all duration-300">
+                  <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  SEC compliant
+                  Regulated & compliant
                 </span>
               </div>
             </div>
