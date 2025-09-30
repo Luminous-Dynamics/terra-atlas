@@ -395,69 +395,10 @@ export default function TerraGlobeBackground() {
           return el
         })
 
-        // Remove old 3D point configuration
+        // Remove ALL 3D geometry - use only flat HTML icon markers!
         .pointsData([]) // No 3D spheres!
-
-        // Keep labels for detailed hover info
-        .labelsData(preparedSites)
-        .labelLat('lat')
-        .labelLng('lng')
-        .labelText('name')
-        .labelSize(0)
-        .labelDotRadius(0)
-        .labelLabel((d: any) => {
-          // Simple tooltip for clustered projects
-          const typeColors: Record<string, string> = {
-            solar: '#fbbf24',
-            wind: '#60a5fa',
-            hydro: '#34d399',
-            geothermal: '#f97316',
-            renewable: '#a855f7'
-          }
-
-          const color = typeColors[d.type] || '#a855f7'
-
-          return `
-            <div style="
-              background: linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(16,24,48,0.95) 100%);
-              border: 1px solid ${color}40;
-              border-radius: 12px;
-              padding: 12px 16px;
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              box-shadow: 0 8px 32px rgba(0,0,0,0.8);
-              backdrop-filter: blur(10px);
-              min-width: 240px;
-            ">
-              <div style="font-size: 16px; font-weight: 600; color: #ffffff; margin-bottom: 8px;">
-                ${d.icon} ${d.name}
-              </div>
-              <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
-                <span style="
-                  background: ${color}30;
-                  color: ${color};
-                  padding: 2px 8px;
-                  border-radius: 4px;
-                  font-size: 12px;
-                  font-weight: 500;
-                  text-transform: capitalize;
-                ">
-                  ${d.type}
-                </span>
-                <span style="color: #cbd5e1; font-size: 12px;">
-                  ${d.totalCapacity.toLocaleString()} MW
-                </span>
-              </div>
-              ${d.count > 1 ? `
-                <div style="font-size: 13px; color: #60a5fa; margin-top: 8px; padding-top: 8px; border-top: 1px solid #ffffff10;">
-                  📍 ${d.count} projects in this area
-                </div>
-              ` : ''}
-              <div style="font-size: 11px; color: #64748b; margin-top: 6px;">
-                Click to explore details
-              </div>
-            </div>
-          `
-        })
+        .labelsData([]) // No label dots!
+        // Tooltips are handled by HTML elements' onclick/onmouseenter
         
       // Set initial view - perfectly centered with optimal distance
       globe.pointOfView({ lat: 10, lng: 0, altitude: 2.2 }, 0) // Further back to see the whole Earth
