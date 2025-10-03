@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
+import EnhancedStatCard from '../components/EnhancedStatCard'
 
-// Dynamic import for clean 3D spinning Earth
+// Dynamic import for Terra Atlas Globe with REAL site data from Supabase
 const TerraGlobe = dynamic(
-  () => import('../components/SimpleSpinningGlobe'),
+  () => import('../components/TerraGlobeWithSites'),
   {
     ssr: false,
     loading: () => (
@@ -14,6 +15,7 @@ const TerraGlobe = dynamic(
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="relative">
             <div className="w-32 h-32 border border-blue-500/20 rounded-full animate-spin"></div>
+            <p className="text-emerald-400 text-center mt-4">Loading real site data...</p>
           </div>
         </div>
       </div>
@@ -41,14 +43,12 @@ if (typeof window !== 'undefined') {
 }
 
 export default function Homepage() {
-  const [mounted, setMounted] = useState(false)
   const [hoveredPrinciple, setHoveredPrinciple] = useState<number | null>(null)
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [showTestPanel, setShowTestPanel] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
     fetchStats()
     // Enable test panel in development mode
     if (process.env.NODE_ENV === 'development') {
@@ -100,15 +100,8 @@ export default function Homepage() {
     }
   }
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-black via-emerald-950/5 to-black">
-        <div className="h-screen flex items-center justify-center">
-          <div className="text-emerald-400/30 animate-pulse">Awakening...</div>
-        </div>
-      </div>
-    )
-  }
+  // Removed mounted guard - React hydration handles this automatically
+  // The page now renders immediately with beautiful content
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
@@ -163,8 +156,8 @@ export default function Homepage() {
         </div>
       </nav>
 
-      {/* Hero Section - Serene & Beautiful Design */}
-      <section className="relative min-h-screen overflow-hidden">
+      {/* Hero Section - Serene & Beautiful Design - Full height for globe */}
+      <section className="relative h-screen overflow-hidden">
         {/* Calming Background Gradient - Soft & Peaceful */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-950 to-emerald-950 opacity-60" />
@@ -173,16 +166,16 @@ export default function Homepage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/5 via-transparent to-transparent" />
         </div>
         
-        {/* Globe Background - Perfectly Centered and Prominent */}
+        {/* Globe - Fully centered on page */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="relative w-full h-full">
             <TerraGlobe />
           </div>
         </div>
         
-        {/* Refined Gradient Overlays - Ultra Minimal for Maximum Globe Visibility */}
-        <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/60 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/90 pointer-events-none" />
+        {/* Minimal Gradient Overlays - Maximum Globe Visibility */}
+        <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/40 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80 pointer-events-none" />
         
         {/* Subtle Energy Pulse Animation */}
         <div className="absolute inset-0 pointer-events-none">
@@ -191,9 +184,9 @@ export default function Homepage() {
         </div>
         
         {/* Hero Content - Elegantly Positioned Around Globe */}
-        <div className="relative z-10 min-h-screen flex flex-col">
-          {/* Top Section - Mobile Optimized Hero */}
-          <div className="flex-1 flex flex-col justify-start pt-20 sm:pt-24 md:pt-32 px-4 sm:px-6">
+        <div className="relative z-10 h-full flex flex-col pointer-events-none">
+          {/* Top Section - Mobile Optimized Hero - Extra compact for maximum globe visibility */}
+          <div className="flex-1 flex flex-col justify-start pt-16 sm:pt-20 px-4 sm:px-6">
             <div className="text-center max-w-5xl mx-auto">
               {/* Tagline Above - Inspiring & Calm */}
               <div className="mb-6 sm:mb-8 animate-fade-in-up">
@@ -202,63 +195,48 @@ export default function Homepage() {
                 </span>
               </div>
 
-              {/* Main Headline - Beautiful & Hopeful */}
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-light leading-tight mb-6 sm:mb-8 animate-fade-in-up animation-delay-100 px-2">
-                <span className="block text-white/95 mb-2 sm:mb-3 font-extralight">
+              {/* Main Headline - Beautiful & Hopeful - More Compact */}
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-light leading-tight mb-4 sm:mb-6 animate-fade-in-up animation-delay-100 px-2">
+                <span className="block text-white/95 mb-1 sm:mb-2 font-extralight">
                   Your Planet.
                 </span>
-                <span className="block text-white/95 mb-2 sm:mb-3 font-extralight">
+                <span className="block text-white/95 mb-1 sm:mb-2 font-extralight">
                   Your Future.
                 </span>
-                <span className="block bg-gradient-to-r from-emerald-300 via-cyan-300 to-blue-300 bg-clip-text text-transparent animate-gradient-flow bg-size-200 font-normal">
+                <span className="block bg-gradient-to-r from-emerald-300 via-cyan-300 to-blue-300 to-emerald-300 bg-clip-text text-transparent animate-shimmer bg-size-200 font-normal"
+                      style={{ backgroundSize: '200% auto' }}>
                   Your Investment.
                 </span>
               </h1>
 
-              {/* Subheadline - Inspiring & Peaceful */}
-              <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white/60 font-extralight leading-relaxed mb-8 sm:mb-10 max-w-4xl mx-auto animate-fade-in-up animation-delay-200 px-4">
-                <span className="block mb-3">Join thousands investing in clean energy projects worldwide.</span>
-                <span className="block text-base sm:text-lg md:text-xl text-white/50">
+              {/* Subheadline - Inspiring & Peaceful - More Compact */}
+              <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/60 font-extralight leading-relaxed mb-6 sm:mb-8 max-w-4xl mx-auto animate-fade-in-up animation-delay-200 px-4">
+                <span className="block mb-2">Join thousands investing in clean energy projects worldwide.</span>
+                <span className="block text-sm sm:text-base md:text-lg text-white/50">
                   From <span className="text-emerald-300 font-light">$10</span>, earn <span className="text-cyan-300 font-light">11-14% returns</span> while healing our planet.
                 </span>
               </p>
 
               {/* Energy Types - Beautiful & Inspiring */}
               <div className="flex flex-wrap justify-center gap-3 sm:gap-4 text-sm sm:text-base text-white/60 animate-fade-in-up animation-delay-300 px-2">
-                <span className="px-4 sm:px-5 py-2 bg-gradient-to-br from-amber-500/10 to-orange-500/10 backdrop-blur-md border border-amber-400/20 rounded-full whitespace-nowrap hover:border-amber-400/40 hover:bg-amber-500/15 transition-all shadow-lg shadow-amber-500/5">☀️ Solar</span>
-                <span className="px-4 sm:px-5 py-2 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 backdrop-blur-md border border-cyan-400/20 rounded-full whitespace-nowrap hover:border-cyan-400/40 hover:bg-cyan-500/15 transition-all shadow-lg shadow-cyan-500/5">💨 Wind</span>
-                <span className="px-4 sm:px-5 py-2 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 backdrop-blur-md border border-blue-400/20 rounded-full whitespace-nowrap hover:border-blue-400/40 hover:bg-blue-500/15 transition-all shadow-lg shadow-blue-500/5">💧 Hydro</span>
-                <span className="px-4 sm:px-5 py-2 bg-gradient-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-md border border-purple-400/20 rounded-full whitespace-nowrap hover:border-purple-400/40 hover:bg-purple-500/15 transition-all shadow-lg shadow-purple-500/5">⚛️ Nuclear</span>
-                <span className="px-4 sm:px-5 py-2 bg-gradient-to-br from-emerald-500/10 to-green-500/10 backdrop-blur-md border border-emerald-400/20 rounded-full whitespace-nowrap hover:border-emerald-400/40 hover:bg-emerald-500/15 transition-all shadow-lg shadow-emerald-500/5">🔋 Storage</span>
+                <span className="px-4 sm:px-5 py-2 bg-gradient-to-br from-amber-500/10 to-orange-500/10 backdrop-blur-md border border-amber-400/20 rounded-full whitespace-nowrap hover:border-amber-400/40 hover:bg-amber-500/15 transition-all shadow-lg shadow-amber-500/5 animate-float hover:scale-110" style={{ animationDelay: '0ms' }}>☀️ Solar</span>
+                <span className="px-4 sm:px-5 py-2 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 backdrop-blur-md border border-cyan-400/20 rounded-full whitespace-nowrap hover:border-cyan-400/40 hover:bg-cyan-500/15 transition-all shadow-lg shadow-cyan-500/5 animate-float hover:scale-110" style={{ animationDelay: '200ms' }}>💨 Wind</span>
+                <span className="px-4 sm:px-5 py-2 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 backdrop-blur-md border border-blue-400/20 rounded-full whitespace-nowrap hover:border-blue-400/40 hover:bg-blue-500/15 transition-all shadow-lg shadow-blue-500/5 animate-float hover:scale-110" style={{ animationDelay: '400ms' }}>💧 Hydro</span>
+                <span className="px-4 sm:px-5 py-2 bg-gradient-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-md border border-purple-400/20 rounded-full whitespace-nowrap hover:border-purple-400/40 hover:bg-purple-500/15 transition-all shadow-lg shadow-purple-500/5 animate-float hover:scale-110" style={{ animationDelay: '600ms' }}>⚛️ Nuclear</span>
+                <span className="px-4 sm:px-5 py-2 bg-gradient-to-br from-emerald-500/10 to-green-500/10 backdrop-blur-md border border-emerald-400/20 rounded-full whitespace-nowrap hover:border-emerald-400/40 hover:bg-emerald-500/15 transition-all shadow-lg shadow-emerald-500/5 animate-float hover:scale-110" style={{ animationDelay: '800ms' }}>🔋 Storage</span>
               </div>
             </div>
           </div>
           
-          {/* Bottom Section - Clean Stats and CTA - Mobile Optimized */}
-          <div className="px-4 sm:px-6 pb-16 sm:pb-20">
+          {/* Bottom Section - Compact Stats and CTA - Extra margin for globe visibility */}
+          <div className="px-4 sm:px-6 pb-8 sm:pb-10 mt-auto pointer-events-auto">
             <div className="max-w-6xl mx-auto">
-              {/* Beautiful Stats Grid - Inspiring & Calming */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-12 sm:mb-14 animate-fade-in-up animation-delay-400">
-                <div className="group relative px-5 sm:px-7 py-6 sm:py-8 bg-gradient-to-br from-emerald-500/10 to-green-500/5 backdrop-blur-lg border border-emerald-400/30 rounded-2xl hover:border-emerald-400/50 hover:from-emerald-500/15 hover:to-green-500/10 transition-all duration-300 shadow-lg shadow-emerald-500/5">
-                  <div className="text-3xl sm:text-4xl font-light text-white mb-2">10,549</div>
-                  <div className="text-sm sm:text-base text-emerald-200/70 font-light">Projects Worldwide</div>
-                  <div className="absolute top-3 right-3 text-emerald-400/30 text-xl">🌍</div>
-                </div>
-                <div className="group relative px-5 sm:px-7 py-6 sm:py-8 bg-gradient-to-br from-cyan-500/10 to-blue-500/5 backdrop-blur-lg border border-cyan-400/30 rounded-2xl hover:border-cyan-400/50 hover:from-cyan-500/15 hover:to-blue-500/10 transition-all duration-300 shadow-lg shadow-cyan-500/5">
-                  <div className="text-3xl sm:text-4xl font-light text-white mb-2">$10</div>
-                  <div className="text-sm sm:text-base text-cyan-200/70 font-light">Start Investing</div>
-                  <div className="absolute top-3 right-3 text-cyan-400/30 text-xl">✨</div>
-                </div>
-                <div className="group relative px-5 sm:px-7 py-6 sm:py-8 bg-gradient-to-br from-purple-500/10 to-pink-500/5 backdrop-blur-lg border border-purple-400/30 rounded-2xl hover:border-purple-400/50 hover:from-purple-500/15 hover:to-pink-500/10 transition-all duration-300 shadow-lg shadow-purple-500/5">
-                  <div className="text-3xl sm:text-4xl font-light text-white mb-2">94%</div>
-                  <div className="text-sm sm:text-base text-purple-200/70 font-light">AI Accuracy</div>
-                  <div className="absolute top-3 right-3 text-purple-400/30 text-xl">🤖</div>
-                </div>
-                <div className="group relative px-5 sm:px-7 py-6 sm:py-8 bg-gradient-to-br from-amber-500/10 to-orange-500/5 backdrop-blur-lg border border-amber-400/30 rounded-2xl hover:border-amber-400/50 hover:from-amber-500/15 hover:to-orange-500/10 transition-all duration-300 shadow-lg shadow-amber-500/5">
-                  <div className="text-3xl sm:text-4xl font-light text-white mb-2">13.7%</div>
-                  <div className="text-sm sm:text-base text-amber-200/70 font-light">Average Returns</div>
-                  <div className="absolute top-3 right-3 text-amber-400/30 text-xl">📈</div>
-                </div>
+              {/* Compact Stats - Single Line - Minimal to not obscure globe */}
+              <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8 animate-fade-in-up animation-delay-400">
+                <EnhancedStatCard value="106K+" label="Projects" icon="🌍" index={0} />
+                <EnhancedStatCard value="$10" label="Min" icon="💎" index={1} />
+                <EnhancedStatCard value="13.7%" label="Returns" icon="📈" index={2} />
+                <EnhancedStatCard value="2.4t" label="CO₂/$100" icon="🌱" index={3} />
               </div>
 
               {/* Beautiful CTAs - Inspiring & Peaceful */}
@@ -266,7 +244,7 @@ export default function Homepage() {
                 <Link
                   href="/explore"
                   prefetch={true}
-                  className="group relative overflow-hidden px-8 sm:px-12 py-4 sm:py-5 bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 rounded-2xl text-white font-light text-base sm:text-lg transition-all hover:shadow-2xl hover:shadow-emerald-500/30 hover:-translate-y-1 hover:scale-[1.02] text-center min-h-[56px] flex items-center justify-center"
+                  className="group relative overflow-hidden px-8 sm:px-12 py-4 sm:py-5 bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 rounded-2xl text-white font-light text-base sm:text-lg transition-all hover:shadow-2xl hover:shadow-emerald-500/30 hover:-translate-y-1 hover:scale-[1.02] text-center min-h-[56px] flex items-center justify-center animate-glow-pulse"
                 >
                   {/* Animated gradient background */}
                   <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
