@@ -6,9 +6,14 @@ export async function GET(request: NextRequest) {
   const code = requestUrl.searchParams.get('code')
 
   if (code) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://fyyszjyixenujgbjaqkd.supabase.co'
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5eXN6anlpeGVudWpnYmphcWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQ4MDQxMDcsImV4cCI6MjA0MDM4MDEwN30.2pMGdnw2d9F7QNpGCHIqadhJz8oP8HxA-sMJz8QRgeM'
-    
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Missing Supabase environment variables')
+      return NextResponse.redirect(`${requestUrl.origin}/auth/login?error=Configuration error`)
+    }
+
     const supabase = createClient(supabaseUrl, supabaseAnonKey)
     
     const { error } = await supabase.auth.exchangeCodeForSession(code)

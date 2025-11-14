@@ -6,8 +6,12 @@ import { users, sessions } from '../../../../lib/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import crypto from 'crypto'
 
-// JWT secret (in production, use environment variable)
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+// JWT secret - must be set in environment variables
+const JWT_SECRET = process.env.JWT_SECRET
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not set')
+}
 
 // Email regex for validation
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

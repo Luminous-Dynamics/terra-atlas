@@ -2,16 +2,12 @@
 const nextConfig = {
   /* config options here */
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
+    // ESLint checks enabled during builds
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
-    // !! WARN !!
-    ignoreBuildErrors: true,
+    // TypeScript type checking enabled during builds
+    ignoreBuildErrors: false,
   },
   // Disable image optimization for now
   images: {

@@ -5,7 +5,11 @@ import crypto from 'crypto'
 // Import our database helper
 const db = require('../../../../lib/db')
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+const JWT_SECRET = process.env.JWT_SECRET
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not set')
+}
 
 export async function POST(request: NextRequest) {
   try {

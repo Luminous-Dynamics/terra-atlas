@@ -77,12 +77,63 @@ npm run dev
 
 ### Environment Variables
 
+Create a `.env.local` file in the root directory with the following variables. **Never commit this file to git!**
+
+See `.env.example` for a complete list of all available environment variables.
+
+**Required:**
 ```env
+# Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_key
-DATABASE_URL=your_postgres_connection_string
+SUPABASE_SERVICE_ROLE_KEY=your_service_key  # Keep this secret!
+
+# Database
+DATABASE_URL=postgresql://user:password@host:port/database
+
+# Authentication
+JWT_SECRET=your-secret-key-minimum-32-characters  # Generate: openssl rand -base64 32
 ```
+
+**Optional (for full features):**
+```env
+# Stripe Payments
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# External APIs
+MAPBOX_TOKEN=pk.your-mapbox-token
+EIA_API_KEY=your-eia-api-key
+NREL_API_KEY=your-nrel-api-key
+
+# Analytics
+NEXT_PUBLIC_GTM_ID=GTM-XXXXXXX
+```
+
+## 🔒 Security
+
+This project follows security best practices:
+
+### Critical Security Requirements
+
+1. **Environment Variables**: All secrets must be in `.env.local` (not committed to git)
+2. **JWT Secret**: Use a strong, randomly generated secret (min 32 characters)
+3. **Service Role Key**: Never expose the Supabase service role key to the client
+4. **Build Checks**: TypeScript and ESLint errors will fail the build (as they should)
+
+### Security Improvements Made
+
+- ✅ Removed all hardcoded credentials
+- ✅ Added environment variable validation
+- ✅ Enabled strict TypeScript checking
+- ✅ Configured proper CORS headers
+- ✅ Added ESLint rules for code quality
+- ✅ Created logger utility (prevents console.log in production)
+
+### Reporting Security Issues
+
+If you discover a security vulnerability, please email security@luminousdynamics.io. Do not open a public issue.
 
 ## 📁 Project Structure
 

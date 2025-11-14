@@ -4,7 +4,11 @@ import { users, dataPoints, validations } from '../../../lib/drizzle/schema'
 import { eq, and, desc, sql } from 'drizzle-orm'
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+const JWT_SECRET = process.env.JWT_SECRET
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not set')
+}
 
 // Verify JWT token
 async function verifyToken(token: string) {

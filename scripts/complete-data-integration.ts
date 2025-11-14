@@ -14,9 +14,15 @@ import * as csv from 'csv-parse/sync';
 // CONFIGURATION
 // ========================================
 
-// Supabase credentials (retrieved from BWS)
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://fyyszjyixenujgbjaqkd.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5eXN6anlpeGVudWpnYmphcWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY0NTM2MzYsImV4cCI6MjA1MjAyOTYzNn0.6P94bIncvH7C-H7_2Z4pFRqNsT_st0l5OZBEcGpN9Hs';
+// Supabase credentials - must be set in environment variables
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('ERROR: Supabase credentials not found in environment variables');
+  console.error('Please set SUPABASE_URL and SUPABASE_ANON_KEY in your .env.local file');
+  process.exit(1);
+}
 
 // API Keys (from environment or BWS)
 const MAPBOX_TOKEN = process.env.MAPBOX_TOKEN || '';

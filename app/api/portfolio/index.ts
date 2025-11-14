@@ -8,6 +8,12 @@ import { energyProjects } from '../../../lib/drizzle/schema-energy';
 import { eq, and, sql } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
 
+const JWT_SECRET = process.env.JWT_SECRET
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not set')
+}
+
 interface PortfolioMetrics {
   totalInvested: number;
   totalReturns: number;
@@ -79,7 +85,7 @@ export default async function handler(
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret') as { userId: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
     const userId = decoded.userId;
 
     // Get user portfolio
