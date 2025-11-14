@@ -7,19 +7,13 @@ import { eq } from 'drizzle-orm'
 import crypto from 'crypto'
 import { withRateLimit, withErrorHandling, errorResponse, successResponse, getClientIp } from '../../../../lib/middleware'
 import { logger } from '../../../../lib/logger'
+import { AUTH_CONFIG, RATE_LIMITS, ERROR_MESSAGES, SUCCESS_MESSAGES } from '../../../../lib/config'
+import { REGEX } from '../../../../lib/constants'
 
-// JWT secret - must be set in environment variables
-const JWT_SECRET = process.env.JWT_SECRET
-
-if (!JWT_SECRET) {
+// Validate JWT secret on startup
+if (!AUTH_CONFIG.jwt.secret) {
   throw new Error('JWT_SECRET environment variable is not set')
 }
-
-// Email regex for validation
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-// Username regex (alphanumeric, underscore, dash, 3-20 chars)
-const USERNAME_REGEX = /^[a-zA-Z0-9_-]{3,20}$/
 
 export async function POST(request: NextRequest) {
   // Apply rate limiting: 3 registration attempts per minute per IP
@@ -33,22 +27,23 @@ export async function POST(request: NextRequest) {
 
       // Validation
       if (!email || !username || !password) {
-        return errorResponse('Email, username, and password are required', 400)
+        return errorResponse(ERROR_MESSAGES.REQUIRED_FIELD('Email, username, and password'), 400)
       }
 
       // Email validation
-      if (!EMAIL_REGEX.test(email)) {
-        return errorResponse('Invalid email format', 400)
+      if (!REGEX.EMAIL.test(email)) {
+        return errorResponse(ERROR_MESSAGES.INVALID_EMAIL, 400)
       }
 
-      // Username validation
+      // Username validation (3-20 characters, alphanumeric, underscore, dash)
+      const USERNAME_REGEX = /^[a-zA-Z0-9_-]{3,20}$/
       if (!USERNAME_REGEX.test(username)) {
         return errorResponse('Username must be 3-20 characters, alphanumeric, underscore, or dash only', 400)
       }
 
       // Password strength validation
-      if (password.length < 8) {
-        return errorResponse('Password must be at least 8 characters long', 400)
+      if (password.length < AUTH_CONFIG.password.minLength) {
+        return errorResponse(`Password must be at least ${AUTH_CONFIG.password.minLength} characters long`, 400)
       }
 
     // Check if email already exists
@@ -59,7 +54,7 @@ export async function POST(request: NextRequest) {
       .limit(1)
 
       if (existingEmail) {
-        return errorResponse('Email already registered', 409)
+        return errorResponse(ERROR_MESSAGES.USER_EXISTS, 409)
       }
 
       // Check if username already exists
@@ -101,13 +96,16 @@ export async function POST(request: NextRequest) {
           email: user.email,
           username: user.username
         },
-        JWT_SECRET,
-        { expiresIn: '7d' }
+        AUTH_CONFIG.jwt.secret,
+        { expiresIn: AUTH_CONFIG.jwt.accessTokenExpiry }
       )
 
       // Generate refresh token
       const refreshToken = crypto.randomBytes(32).toString('hex')
       const refreshTokenHash = await bcrypt.hash(refreshToken, 10)
+
+      // Calculate session expiry from config
+      const sessionExpiry = new Date(Date.now() + AUTH_CONFIG.session.maxAge)
 
       // Create session
       await db
@@ -115,7 +113,7 @@ export async function POST(request: NextRequest) {
         .values({
           userId: user.id,
           refreshTokenHash,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+          expiresAt: sessionExpiry,
           ipAddress: getClientIp(request),
           userAgent: request.headers.get('user-agent') || null
         })
@@ -135,9 +133,9 @@ export async function POST(request: NextRequest) {
         },
         token,
         refreshToken,
-        expiresIn: 604800 // 7 days in seconds
-      }, 'User registered successfully')
+        expiresIn: AUTH_CONFIG.session.maxAge / 1000 // Convert to seconds
+      }, SUCCESS_MESSAGES.REGISTER_SUCCESS)
     }),
-    { maxRequests: 3, windowMs: 60000 } // 3 registrations per minute
+    RATE_LIMITS.auth.register
   )
 }

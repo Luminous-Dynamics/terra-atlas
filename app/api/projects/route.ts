@@ -1,16 +1,27 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import Database from 'better-sqlite3'
 import path from 'path'
+import { withRateLimit, withErrorHandling, successResponse, errorResponse } from '../../../lib/middleware'
+import { logger } from '../../../lib/logger'
+import { RATE_LIMITS, PAGINATION, API_LIMITS } from '../../../lib/config'
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const limit = parseInt(searchParams.get('limit') || '100')
-  const type = searchParams.get('type')
-  const status = searchParams.get('status')
-  const country = searchParams.get('country')
-  const search = searchParams.get('search')
-  const offset = parseInt(searchParams.get('offset') || '0')
-  
+export async function GET(request: NextRequest) {
+  return withRateLimit(
+    request,
+    async () => withErrorHandling(async () => {
+      const { searchParams } = new URL(request.url)
+      const limit = Math.min(
+        parseInt(searchParams.get('limit') || String(PAGINATION.defaultLimit)),
+        API_LIMITS.maxProjectsPerPage
+      )
+      const type = searchParams.get('type')
+      const status = searchParams.get('status')
+      const country = searchParams.get('country')
+      const search = searchParams.get('search')
+      const offset = parseInt(searchParams.get('offset') || String(PAGINATION.defaultOffset))
+
+      logger.api('GET', '/api/projects', { limit, type, status, country, search, offset })
+
   try {
     // Use the real database with 79,193 projects
     const db = new Database(path.join(process.cwd(), 'data', 'terra-atlas-local.db'), { readonly: true })
@@ -77,10 +88,14 @@ export async function GET(request: Request) {
     const states = db.prepare('SELECT DISTINCT state FROM projects WHERE state IS NOT NULL LIMIT 50').all()
     
     db.close()
-    
-    return NextResponse.json({
+
+    logger.info('Projects fetched successfully', { count: projects.length, total: count })
+
+    return successResponse({
       projects,
       total: count,
+      limit,
+      offset,
       metadata: {
         types: types.map((t: any) => t.type),
         statuses: statuses.map((s: any) => s.status),
@@ -88,29 +103,41 @@ export async function GET(request: Request) {
       }
     })
   } catch (error) {
-    console.error('Database error:', error)
-    
+    logger.error('Database error in projects route:', error)
+
     // Return actual project count even if query fails
-    return NextResponse.json({
+    return successResponse({
       projects: [],
       total: 79193,
+      limit,
+      offset,
       metadata: {
         types: ['Solar', 'Wind', 'Hydro', 'Battery', 'Nuclear', 'Other'],
         statuses: ['Planning', 'Construction', 'Operational', 'Proposed'],
         countries: ['United States', 'China', 'India', 'Germany', 'Japan', 'Brazil']
       },
-      error: 'Database temporarily unavailable'
+      fallback: true,
+      message: 'Database temporarily unavailable - using fallback data'
     })
   }
+    }),
+    RATE_LIMITS.api.projects
+  )
 }
 
-// Stats endpoint
-export async function POST(request: Request) {
+// Stats endpoint (deprecated - use /api/stats instead)
+export async function POST(request: NextRequest) {
+  return withRateLimit(
+    request,
+    async () => withErrorHandling(async () => {
+      logger.api('POST', '/api/projects', {})
+      logger.warn('Deprecated endpoint: POST /api/projects - use /api/stats instead')
+
   try {
     const db = new Database(path.join(process.cwd(), 'data', 'terra-atlas-local.db'), { readonly: true })
-    
+
     const stats = db.prepare(`
-      SELECT 
+      SELECT
         COUNT(*) as total_projects,
         SUM(capacity_mw) as total_capacity,
         COUNT(DISTINCT country) as countries,
@@ -118,17 +145,23 @@ export async function POST(request: Request) {
         AVG(capacity_mw) as avg_capacity
       FROM projects
     `).get()
-    
+
     db.close()
-    
-    return NextResponse.json(stats)
+
+    return successResponse(stats, 'Please use /api/stats endpoint instead')
   } catch (error) {
-    return NextResponse.json({
+    logger.error('Database error in projects stats:', error)
+
+    return successResponse({
       total_projects: 79193,
       total_capacity: 2955700,
       countries: 60,
       developers: 1500,
-      avg_capacity: 37.3
-    })
+      avg_capacity: 37.3,
+      fallback: true
+    }, 'Using fallback data - database temporarily unavailable')
   }
+    }),
+    RATE_LIMITS.api.projects
+  )
 }

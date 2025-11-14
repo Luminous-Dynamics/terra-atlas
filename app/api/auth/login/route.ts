@@ -7,11 +7,10 @@ import { eq, or, and } from 'drizzle-orm'
 import crypto from 'crypto'
 import { withRateLimit, withErrorHandling, errorResponse, successResponse, getClientIp } from '../../../../lib/middleware'
 import { logger } from '../../../../lib/logger'
+import { AUTH_CONFIG, RATE_LIMITS, ERROR_MESSAGES, SUCCESS_MESSAGES } from '../../../../lib/config'
 
-// JWT secret - must be set in environment variables
-const JWT_SECRET = process.env.JWT_SECRET
-
-if (!JWT_SECRET) {
+// Validate JWT secret on startup
+if (!AUTH_CONFIG.jwt.secret) {
   throw new Error('JWT_SECRET environment variable is not set')
 }
 
@@ -27,7 +26,7 @@ export async function POST(request: NextRequest) {
 
       // Validation
       if (!emailOrUsername || !password) {
-        return errorResponse('Email/username and password are required', 400)
+        return errorResponse(ERROR_MESSAGES.REQUIRED_FIELD('Email/username and password'), 400)
       }
 
       // Find user by email or username
@@ -48,7 +47,7 @@ export async function POST(request: NextRequest) {
       if (!user) {
         // Don't reveal whether email/username exists
         logger.warn('Login attempt failed: user not found', { emailOrUsername })
-        return errorResponse('Invalid credentials', 401)
+        return errorResponse(ERROR_MESSAGES.INVALID_CREDENTIALS, 401)
       }
 
       // Verify password
@@ -56,7 +55,7 @@ export async function POST(request: NextRequest) {
 
       if (!isValidPassword) {
         logger.warn('Login attempt failed: invalid password', { userId: user.id })
-        return errorResponse('Invalid credentials', 401)
+        return errorResponse(ERROR_MESSAGES.INVALID_CREDENTIALS, 401)
       }
 
       // Update last login
@@ -75,13 +74,16 @@ export async function POST(request: NextRequest) {
           isAdmin: user.isAdmin,
           isModerator: user.isModerator
         },
-        JWT_SECRET,
-        { expiresIn: '7d' }
+        AUTH_CONFIG.jwt.secret,
+        { expiresIn: AUTH_CONFIG.jwt.accessTokenExpiry }
       )
 
       // Generate refresh token
       const refreshToken = crypto.randomBytes(32).toString('hex')
       const refreshTokenHash = await bcrypt.hash(refreshToken, 10)
+
+      // Calculate session expiry from config
+      const sessionExpiry = new Date(Date.now() + AUTH_CONFIG.session.maxAge)
 
       // Create new session
       await db
@@ -89,7 +91,7 @@ export async function POST(request: NextRequest) {
         .values({
           userId: user.id,
           refreshTokenHash,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+          expiresAt: sessionExpiry,
           ipAddress: getClientIp(request),
           userAgent: request.headers.get('user-agent') || null
         })
@@ -116,9 +118,9 @@ export async function POST(request: NextRequest) {
         },
         token,
         refreshToken,
-        expiresIn: 604800 // 7 days in seconds
-      }, 'Login successful')
+        expiresIn: AUTH_CONFIG.session.maxAge / 1000 // Convert to seconds
+      }, SUCCESS_MESSAGES.LOGIN_SUCCESS)
     }),
-    { maxRequests: 5, windowMs: 60000 } // 5 attempts per minute
+    RATE_LIMITS.auth.login
   )
 }

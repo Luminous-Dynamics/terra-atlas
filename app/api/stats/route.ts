@@ -3,6 +3,7 @@ import Database from 'better-sqlite3'
 import path from 'path'
 import { withErrorHandling, successResponse } from '../../../lib/middleware'
 import { logger } from '../../../lib/logger'
+import { CACHE_DURATIONS } from '../../../lib/config'
 
 // Force this route to be dynamic (not pre-rendered)
 export const dynamic = 'force-dynamic'
@@ -11,13 +12,12 @@ export const runtime = 'nodejs'
 // Simple in-memory cache
 let cachedStats: any = null
 let cacheTime: number = 0
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 export async function GET(request: NextRequest) {
   return withErrorHandling(async () => {
     // Check cache first
     const now = Date.now()
-    if (cachedStats && (now - cacheTime) < CACHE_DURATION) {
+    if (cachedStats && (now - cacheTime) < CACHE_DURATIONS.stats) {
       logger.debug('Returning cached stats')
       return successResponse({
         ...cachedStats,
