@@ -442,7 +442,7 @@ export default function QuickWinFinder() {
           <div className="grid md:grid-cols-2 gap-4 text-sm text-white/60">
             <div className="flex items-start gap-2">
               <span className="text-emerald-400">•</span>
-              <p>Focus on projects with <3 year payback for fastest capital recovery</p>
+              <p>Focus on projects with {'<3'} year payback for fastest capital recovery</p>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-emerald-400">•</span>
