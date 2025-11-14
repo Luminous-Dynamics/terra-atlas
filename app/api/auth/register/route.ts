@@ -5,6 +5,8 @@ import { db } from '../../../../lib/drizzle/db'
 import { users, sessions } from '../../../../lib/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import crypto from 'crypto'
+import { withRateLimit, withErrorHandling, errorResponse, successResponse, getClientIp } from '../../../../lib/middleware'
+import { logger } from '../../../../lib/logger'
 
 // JWT secret - must be set in environment variables
 const JWT_SECRET = process.env.JWT_SECRET
@@ -20,41 +22,34 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const USERNAME_REGEX = /^[a-zA-Z0-9_-]{3,20}$/
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { email, username, password, fullName } = body
+  // Apply rate limiting: 3 registration attempts per minute per IP
+  return withRateLimit(
+    request,
+    async () => withErrorHandling(async () => {
+      const body = await request.json()
+      const { email, username, password, fullName } = body
 
-    // Validation
-    if (!email || !username || !password) {
-      return NextResponse.json(
-        { error: 'Email, username, and password are required' },
-        { status: 400 }
-      )
-    }
+      logger.api('POST', '/api/auth/register', { email, username })
 
-    // Email validation
-    if (!EMAIL_REGEX.test(email)) {
-      return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
-      )
-    }
+      // Validation
+      if (!email || !username || !password) {
+        return errorResponse('Email, username, and password are required', 400)
+      }
 
-    // Username validation
-    if (!USERNAME_REGEX.test(username)) {
-      return NextResponse.json(
-        { error: 'Username must be 3-20 characters, alphanumeric, underscore, or dash only' },
-        { status: 400 }
-      )
-    }
+      // Email validation
+      if (!EMAIL_REGEX.test(email)) {
+        return errorResponse('Invalid email format', 400)
+      }
 
-    // Password strength validation
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: 'Password must be at least 8 characters long' },
-        { status: 400 }
-      )
-    }
+      // Username validation
+      if (!USERNAME_REGEX.test(username)) {
+        return errorResponse('Username must be 3-20 characters, alphanumeric, underscore, or dash only', 400)
+      }
+
+      // Password strength validation
+      if (password.length < 8) {
+        return errorResponse('Password must be at least 8 characters long', 400)
+      }
 
     // Check if email already exists
     const [existingEmail] = await db
@@ -63,79 +58,72 @@ export async function POST(request: NextRequest) {
       .where(eq(users.email, email.toLowerCase()))
       .limit(1)
 
-    if (existingEmail) {
-      return NextResponse.json(
-        { error: 'Email already registered' },
-        { status: 409 }
+      if (existingEmail) {
+        return errorResponse('Email already registered', 409)
+      }
+
+      // Check if username already exists
+      const [existingUsername] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, username.toLowerCase()))
+        .limit(1)
+
+      if (existingUsername) {
+        return errorResponse('Username already taken', 409)
+      }
+
+      // Hash password
+      const salt = await bcrypt.genSalt(10)
+      const passwordHash = await bcrypt.hash(password, salt)
+
+      // Create user
+      const [user] = await db
+        .insert(users)
+        .values({
+          email: email.toLowerCase(),
+          username: username.toLowerCase(),
+          passwordHash,
+          fullName,
+          // Generate default avatar using initials or service like Gravatar
+          avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            fullName || username
+          )}&background=random`,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning()
+
+      // Generate JWT token
+      const token = jwt.sign(
+        {
+          userId: user.id,
+          email: user.email,
+          username: user.username
+        },
+        JWT_SECRET,
+        { expiresIn: '7d' }
       )
-    }
 
-    // Check if username already exists
-    const [existingUsername] = await db
-      .select()
-      .from(users)
-      .where(eq(users.username, username.toLowerCase()))
-      .limit(1)
+      // Generate refresh token
+      const refreshToken = crypto.randomBytes(32).toString('hex')
+      const refreshTokenHash = await bcrypt.hash(refreshToken, 10)
 
-    if (existingUsername) {
-      return NextResponse.json(
-        { error: 'Username already taken' },
-        { status: 409 }
-      )
-    }
+      // Create session
+      await db
+        .insert(sessions)
+        .values({
+          userId: user.id,
+          refreshTokenHash,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+          ipAddress: getClientIp(request),
+          userAgent: request.headers.get('user-agent') || null
+        })
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10)
-    const passwordHash = await bcrypt.hash(password, salt)
+      logger.info('New user registered successfully', { userId: user.id, username: user.username })
 
-    // Create user
-    const [user] = await db
-      .insert(users)
-      .values({
-        email: email.toLowerCase(),
-        username: username.toLowerCase(),
-        passwordHash,
-        fullName,
-        // Generate default avatar using initials or service like Gravatar
-        avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-          fullName || username
-        )}&background=random`,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
-      .returning()
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.email,
-        username: user.username 
-      },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    )
-
-    // Generate refresh token
-    const refreshToken = crypto.randomBytes(32).toString('hex')
-    const refreshTokenHash = await bcrypt.hash(refreshToken, 10)
-
-    // Create session
-    await db
-      .insert(sessions)
-      .values({
-        userId: user.id,
-        refreshTokenHash,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || null,
-        userAgent: request.headers.get('user-agent') || null
-      })
-
-    // Log activity (removed for now - activityLog table not in schema)
-
-    // Return user data and tokens
-    return NextResponse.json(
-      {
+      // Return user data and tokens
+      return successResponse({
         user: {
           id: user.id,
           email: user.email,
@@ -148,17 +136,8 @@ export async function POST(request: NextRequest) {
         token,
         refreshToken,
         expiresIn: 604800 // 7 days in seconds
-      },
-      { status: 201 }
-    )
-  } catch (error) {
-    console.error('Registration error:', error)
-    
-    // Log error (removed for now - activityLog table not in schema)
-
-    return NextResponse.json(
-      { error: 'Failed to register user' },
-      { status: 500 }
-    )
-  }
+      }, 'User registered successfully')
+    }),
+    { maxRequests: 3, windowMs: 60000 } // 3 registrations per minute
+  )
 }

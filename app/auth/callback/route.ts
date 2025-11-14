@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { logger } from '../../lib/logger'
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -10,16 +11,16 @@ export async function GET(request: NextRequest) {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
     if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('Missing Supabase environment variables')
+      logger.error('Missing Supabase environment variables')
       return NextResponse.redirect(`${requestUrl.origin}/auth/login?error=Configuration error`)
     }
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey)
-    
+
     const { error } = await supabase.auth.exchangeCodeForSession(code)
-    
+
     if (error) {
-      console.error('Auth callback error:', error)
+      logger.error('Auth callback error:', error)
       return NextResponse.redirect(`${requestUrl.origin}/auth/login?error=${error.message}`)
     }
   }
