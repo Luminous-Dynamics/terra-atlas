@@ -1,0 +1,57 @@
+# Terra Atlas - Robots.txt
+# https://www.robotstxt.org/robotstxt.html
+
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Disallow private/admin areas
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard/private/
+Disallow: /_next/
+Disallow: /auth/callback
+
+# Sitemaps
+Sitemap: https://terra-atlas.earth/sitemap.xml
+Sitemap: https://terra-atlas.earth/sitemap-projects.xml
+
+# Crawl delay (be nice to servers)
+Crawl-delay: 1
+
+# Specific bot rules
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0.5
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 1
+
+# Social media bots (for previews)
+User-agent: facebot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+# Block bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: SemrushBot
+Crawl-delay: 10
+
+# Host (preferred domain)
+# Uncomment when custom domain is set
+# Host: https://terra-atlas.earth
