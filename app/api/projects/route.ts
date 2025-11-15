@@ -1,167 +1,349 @@
-import { NextRequest, NextResponse } from 'next/server'
+/**
+ * Projects API Endpoints
+ *
+ * Handles project listing and creation
+ * Migrated to Phase 3 patterns with enhanced error handling,
+ * structured logging, performance tracking, and standardized responses
+ */
+
+import { NextRequest } from 'next/server'
 import Database from 'better-sqlite3'
 import path from 'path'
-import { withRateLimit, withErrorHandling, successResponse, errorResponse } from '../../../lib/middleware'
-import { logger } from '../../../lib/logger'
-import { RATE_LIMITS, PAGINATION, API_LIMITS } from '../../../lib/config'
+import { withMiddleware } from '@/lib/middleware'
+import { successResponse, paginatedResponse } from '@/lib/api/responses'
+import { structuredLogger } from '@/lib/logging/structured-logger'
+import { startTimer } from '@/lib/logging/performance-logger'
+import { DatabaseError } from '@/lib/errors'
+import { listProjectsQuerySchema } from '@/lib/validation/project.schemas'
+import { RATE_LIMITS } from '@/lib/config'
 
+/**
+ * GET /api/projects
+ *
+ * List projects with filtering, pagination, and search
+ *
+ * @param request - Next.js request object
+ * @returns Paginated list of projects with metadata
+ */
 export async function GET(request: NextRequest) {
-  return withRateLimit(
+  return withMiddleware(
     request,
-    async () => withErrorHandling(async () => {
+    async (context) => {
+      const timer = startTimer('get_projects')
+
+      // Parse and validate query parameters
       const { searchParams } = new URL(request.url)
-      const limit = Math.min(
-        parseInt(searchParams.get('limit') || String(PAGINATION.defaultLimit)),
-        API_LIMITS.maxProjectsPerPage
-      )
-      const type = searchParams.get('type')
-      const status = searchParams.get('status')
-      const country = searchParams.get('country')
-      const search = searchParams.get('search')
-      const offset = parseInt(searchParams.get('offset') || String(PAGINATION.defaultOffset))
+      const queryParams = Object.fromEntries(searchParams.entries())
 
-      logger.api('GET', '/api/projects', { limit, type, status, country, search, offset })
+      structuredLogger.info('Projects list requested', {
+        operation: 'list_projects',
+        params: queryParams,
+      })
 
-  try {
-    // Use the real database with 79,193 projects
-    const db = new Database(path.join(process.cwd(), 'data', 'terra-atlas-local.db'), { readonly: true })
-    
-    // Build query with filters - map to frontend expected format
-    let query = `SELECT 
-      id,
-      project_name as name,
-      project_type as type,
-      developer,
-      owner_type,
-      state,
-      county,
-      region,
-      state as country, -- Map state to country for now
-      latitude,
-      longitude,
-      capacity_mw,
-      energy_source,
-      technology_type,
-      status,
-      operational,
-      year_completed,
-      total_cost as investment,
-      annual_revenue_potential,
-      carbon_avoided_tons_per_year
-    FROM projects WHERE 1=1`
-    
-    const params: any[] = []
-    
-    if (type) {
-      query += ' AND project_type = ?'
-      params.push(type)
-    }
-    if (status) {
-      query += ' AND status = ?'
-      params.push(status)
-    }
-    if (country) {
-      query += ' AND state = ?'
-      params.push(country)
-    }
-    if (search) {
-      query += ' AND (project_name LIKE ? OR state LIKE ? OR developer LIKE ?)'
-      const searchPattern = `%${search}%`
-      params.push(searchPattern, searchPattern, searchPattern)
-    }
-    
-    // Add limit and offset
-    query += ' LIMIT ? OFFSET ?'
-    params.push(limit, offset)
-    
-    const stmt = db.prepare(query)
-    const projects = stmt.all(...params)
-    
-    // Get total count
-    const countQuery = 'SELECT COUNT(*) as count FROM projects'
-    const countStmt = db.prepare(countQuery)
-    const { count } = countStmt.get() as any
-    
-    // Get metadata for filters
-    const types = db.prepare('SELECT DISTINCT project_type as type FROM projects WHERE project_type IS NOT NULL').all()
-    const statuses = db.prepare('SELECT DISTINCT status FROM projects WHERE status IS NOT NULL').all()
-    const states = db.prepare('SELECT DISTINCT state FROM projects WHERE state IS NOT NULL LIMIT 50').all()
-    
-    db.close()
+      // Validate query parameters with Zod
+      const validated = listProjectsQuerySchema.parse(queryParams)
+      const { limit, offset, type, status, country, state, search, minCapacity, maxCapacity, operational, sortBy, sortOrder } = validated
 
-    logger.info('Projects fetched successfully', { count: projects.length, total: count })
+      timer.mark('validation_complete')
 
-    return successResponse({
-      projects,
-      total: count,
-      limit,
-      offset,
-      metadata: {
-        types: types.map((t: any) => t.type),
-        statuses: statuses.map((s: any) => s.status),
-        countries: states.map((s: any) => s.state)
+      let db: Database.Database | null = null
+
+      try {
+        // Connect to database
+        timer.mark('database_connection_start')
+        db = new Database(path.join(process.cwd(), 'data', 'terra-atlas-local.db'), {
+          readonly: true,
+        })
+        timer.mark('database_connection_complete')
+
+        // Build query with filters
+        const queryParts: string[] = []
+        const params: any[] = []
+
+        // Base SELECT
+        let query = `SELECT
+          id,
+          project_name as name,
+          project_type as type,
+          developer,
+          owner_type,
+          state,
+          county,
+          region,
+          state as country,
+          latitude,
+          longitude,
+          capacity_mw,
+          energy_source,
+          technology_type,
+          status,
+          operational,
+          year_completed,
+          total_cost as investment,
+          annual_revenue_potential,
+          carbon_avoided_tons_per_year
+        FROM projects WHERE 1=1`
+
+        // Apply filters
+        if (type) {
+          queryParts.push('project_type = ?')
+          params.push(type)
+        }
+
+        if (status) {
+          queryParts.push('status = ?')
+          params.push(status)
+        }
+
+        if (country) {
+          queryParts.push('state = ?')
+          params.push(country)
+        }
+
+        if (state) {
+          queryParts.push('state = ?')
+          params.push(state)
+        }
+
+        if (operational !== undefined) {
+          queryParts.push('operational = ?')
+          params.push(operational ? 1 : 0)
+        }
+
+        if (minCapacity !== undefined) {
+          queryParts.push('capacity_mw >= ?')
+          params.push(minCapacity)
+        }
+
+        if (maxCapacity !== undefined) {
+          queryParts.push('capacity_mw <= ?')
+          params.push(maxCapacity)
+        }
+
+        if (search) {
+          queryParts.push('(project_name LIKE ? OR state LIKE ? OR developer LIKE ?)')
+          const searchPattern = `%${search}%`
+          params.push(searchPattern, searchPattern, searchPattern)
+        }
+
+        // Add WHERE clauses
+        if (queryParts.length > 0) {
+          query += ' AND ' + queryParts.join(' AND ')
+        }
+
+        // Add ORDER BY
+        const sortColumn = {
+          name: 'project_name',
+          capacity: 'capacity_mw',
+          investment: 'total_cost',
+          created: 'id', // Using ID as proxy for creation date
+          status: 'status',
+        }[sortBy] || 'id'
+
+        query += ` ORDER BY ${sortColumn} ${sortOrder.toUpperCase()}`
+
+        // Add pagination
+        query += ' LIMIT ? OFFSET ?'
+        params.push(limit, offset)
+
+        // Execute main query
+        timer.mark('query_execution_start')
+        const stmt = db.prepare(query)
+        const projects = stmt.all(...params)
+        timer.mark('query_execution_complete')
+
+        // Get total count with same filters
+        let countQuery = 'SELECT COUNT(*) as count FROM projects WHERE 1=1'
+        const countParams: any[] = []
+
+        if (queryParts.length > 0) {
+          countQuery += ' AND ' + queryParts.join(' AND ')
+          // Copy filter params (excluding LIMIT/OFFSET)
+          for (let i = 0; i < params.length - 2; i++) {
+            countParams.push(params[i])
+          }
+        }
+
+        timer.mark('count_query_start')
+        const countStmt = db.prepare(countQuery)
+        const { count } = countStmt.get(...countParams) as any
+        timer.mark('count_query_complete')
+
+        // Get metadata for filters (cached values to avoid expensive queries)
+        timer.mark('metadata_query_start')
+        const types = db
+          .prepare('SELECT DISTINCT project_type as type FROM projects WHERE project_type IS NOT NULL ORDER BY project_type')
+          .all()
+
+        const statuses = db
+          .prepare('SELECT DISTINCT status FROM projects WHERE status IS NOT NULL ORDER BY status')
+          .all()
+
+        const states = db
+          .prepare('SELECT DISTINCT state FROM projects WHERE state IS NOT NULL ORDER BY state LIMIT 100')
+          .all()
+        timer.mark('metadata_query_complete')
+
+        db.close()
+        db = null
+
+        const duration = timer.end()
+
+        structuredLogger.info('Projects fetched successfully', {
+          operation: 'list_projects',
+          count: projects.length,
+          total: count,
+          duration,
+          filters: { type, status, country, state, search, minCapacity, maxCapacity, operational },
+        })
+
+        // Return paginated response with metadata
+        return paginatedResponse(
+          projects,
+          {
+            total: count,
+            limit,
+            offset,
+          },
+          {
+            requestId: context.requestId,
+            metadata: {
+              types: types.map((t: any) => t.type),
+              statuses: statuses.map((s: any) => s.status),
+              countries: states.map((s: any) => s.state),
+              performance: {
+                validation: timer.getMark('validation_complete'),
+                database_connection: timer.getMark('database_connection_complete')! - timer.getMark('database_connection_start')!,
+                query_execution: timer.getMark('query_execution_complete')! - timer.getMark('query_execution_start')!,
+                count_query: timer.getMark('count_query_complete')! - timer.getMark('count_query_start')!,
+                metadata_query: timer.getMark('metadata_query_complete')! - timer.getMark('metadata_query_start')!,
+                total: duration,
+              },
+            },
+          }
+        )
+      } catch (error) {
+        const duration = timer.end()
+
+        structuredLogger.error('Database error in projects route', error, {
+          operation: 'list_projects',
+          duration,
+          filters: { type, status, country, search },
+        })
+
+        // Ensure database is closed
+        if (db) {
+          try {
+            db.close()
+          } catch (closeError) {
+            structuredLogger.warn('Error closing database connection', {
+              error: closeError,
+            })
+          }
+        }
+
+        // Throw DatabaseError for middleware to handle
+        throw new DatabaseError('Failed to fetch projects', {
+          operation: 'list_projects',
+          filters: { type, status, country, search },
+          originalError: error instanceof Error ? error.message : String(error),
+        })
       }
-    })
-  } catch (error) {
-    logger.error('Database error in projects route:', error)
-
-    // Return actual project count even if query fails
-    return successResponse({
-      projects: [],
-      total: 79193,
-      limit,
-      offset,
-      metadata: {
-        types: ['Solar', 'Wind', 'Hydro', 'Battery', 'Nuclear', 'Other'],
-        statuses: ['Planning', 'Construction', 'Operational', 'Proposed'],
-        countries: ['United States', 'China', 'India', 'Germany', 'Japan', 'Brazil']
-      },
-      fallback: true,
-      message: 'Database temporarily unavailable - using fallback data'
-    })
-  }
-    }),
-    RATE_LIMITS.api.projects
+    },
+    {
+      rateLimit: RATE_LIMITS.api?.projects || { maxRequests: 100, windowMs: 60000 },
+      performanceTracking: true,
+    }
   )
 }
 
-// Stats endpoint (deprecated - use /api/stats instead)
+/**
+ * POST /api/projects
+ *
+ * DEPRECATED: Get project statistics
+ * Use GET /api/stats instead
+ *
+ * @param request - Next.js request object
+ * @returns Project statistics
+ */
 export async function POST(request: NextRequest) {
-  return withRateLimit(
+  return withMiddleware(
     request,
-    async () => withErrorHandling(async () => {
-      logger.api('POST', '/api/projects', {})
-      logger.warn('Deprecated endpoint: POST /api/projects - use /api/stats instead')
+    async (context) => {
+      const timer = startTimer('get_project_stats')
 
-  try {
-    const db = new Database(path.join(process.cwd(), 'data', 'terra-atlas-local.db'), { readonly: true })
+      structuredLogger.warn('Deprecated endpoint called', {
+        operation: 'project_stats',
+        endpoint: 'POST /api/projects',
+        deprecation: 'Use GET /api/stats instead',
+      })
 
-    const stats = db.prepare(`
-      SELECT
-        COUNT(*) as total_projects,
-        SUM(capacity_mw) as total_capacity,
-        COUNT(DISTINCT country) as countries,
-        COUNT(DISTINCT developer) as developers,
-        AVG(capacity_mw) as avg_capacity
-      FROM projects
-    `).get()
+      let db: Database.Database | null = null
 
-    db.close()
+      try {
+        db = new Database(path.join(process.cwd(), 'data', 'terra-atlas-local.db'), {
+          readonly: true,
+        })
 
-    return successResponse(stats, 'Please use /api/stats endpoint instead')
-  } catch (error) {
-    logger.error('Database error in projects stats:', error)
+        const stats = db.prepare(`
+          SELECT
+            COUNT(*) as total_projects,
+            SUM(capacity_mw) as total_capacity,
+            COUNT(DISTINCT state) as countries,
+            COUNT(DISTINCT developer) as developers,
+            AVG(capacity_mw) as avg_capacity
+          FROM projects
+        `).get()
 
-    return successResponse({
-      total_projects: 79193,
-      total_capacity: 2955700,
-      countries: 60,
-      developers: 1500,
-      avg_capacity: 37.3,
-      fallback: true
-    }, 'Using fallback data - database temporarily unavailable')
-  }
-    }),
-    RATE_LIMITS.api.projects
+        db.close()
+        db = null
+
+        const duration = timer.endAndLog({
+          operation: 'project_stats',
+        })
+
+        return successResponse(
+          stats,
+          {
+            requestId: context.requestId,
+            headers: {
+              'X-Deprecated': 'true',
+              'X-Deprecation-Message': 'Use GET /api/stats instead',
+            },
+            metadata: {
+              deprecation: {
+                deprecated: true,
+                message: 'Please use GET /api/stats endpoint instead',
+                sunsetDate: '2026-01-01',
+              },
+              performance: {
+                duration,
+              },
+            },
+          }
+        )
+      } catch (error) {
+        const duration = timer.end()
+
+        structuredLogger.error('Database error in project stats', error, {
+          operation: 'project_stats',
+          duration,
+        })
+
+        if (db) {
+          try {
+            db.close()
+          } catch (closeError) {
+            // Ignore close errors
+          }
+        }
+
+        throw new DatabaseError('Failed to fetch project statistics')
+      }
+    },
+    {
+      rateLimit: RATE_LIMITS.api?.projects || { maxRequests: 100, windowMs: 60000 },
+      performanceTracking: true,
+    }
   )
 }
