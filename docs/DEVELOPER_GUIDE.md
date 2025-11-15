@@ -127,6 +127,14 @@ terra-atlas/
 │   │   ├── auth.schemas.ts      # Authentication
 │   │   ├── projects.schemas.ts  # Projects
 │   │   └── investments.schemas.ts # Investments
+│   ├── errors/              # Error management
+│   │   ├── error-types.ts       # Custom error classes
+│   │   ├── error-handler.ts     # Centralized error handling
+│   │   └── error-recovery.ts    # Recovery strategies
+│   ├── api/                 # API utilities
+│   │   ├── types.ts            # API response types
+│   │   ├── responses.ts        # Response builders
+│   │   └── pagination.ts       # Pagination helpers
 │   ├── types/               # TypeScript types
 │   └── drizzle/             # Database ORM
 │
@@ -213,6 +221,54 @@ feat: add rate limiting to authentication endpoints
 fix: correct IRR calculation in investment calculator
 docs: update API documentation with new endpoints
 refactor: simplify error handling in auth routes
+```
+
+### Automated Git Hooks
+
+The project uses **Husky** to automatically enforce code quality before commits:
+
+**Pre-commit Hook** (automatic):
+- Runs Prettier to format staged files
+- Runs ESLint to fix linting issues
+- Ensures consistent code style
+
+**Commit Message Hook** (automatic):
+- Validates commit message format
+- Enforces Conventional Commits standard
+- Rejects commits with invalid messages
+
+**Pre-push Hook** (automatic):
+- Runs TypeScript type checking
+- Prevents pushing code with type errors
+
+**How It Works**:
+```bash
+# When you commit, hooks run automatically:
+git add .
+git commit -m "feat: add new feature"
+# → Prettier formats your code
+# → ESLint fixes issues
+# → Commit message is validated
+# → Commit succeeds if all checks pass
+
+# When you push, type checking runs:
+git push
+# → TypeScript checks for type errors
+# → Push succeeds if no errors
+```
+
+**If a hook fails**:
+```bash
+# Fix the issues and try again
+npm run format        # Format all files
+npm run lint:fix      # Fix linting issues
+npm run type-check    # Check for type errors
+```
+
+**Bypassing hooks** (not recommended):
+```bash
+# Only use in emergencies
+git commit --no-verify -m "emergency fix"
 ```
 
 ---
@@ -334,6 +390,144 @@ export async function POST(request: NextRequest) {
 - ✅ Sanitized input (trimming, normalization)
 - ✅ Detailed error messages
 - ✅ Reusable validation logic
+
+#### 6. Error Handling
+
+Use custom error types for better error management:
+
+```typescript
+import {
+  ValidationError,
+  AuthenticationError,
+  NotFoundError,
+  DatabaseError,
+} from '@/lib/errors'
+import { handleError, logError } from '@/lib/errors/error-handler'
+import { withRetry, canRecover } from '@/lib/errors/error-recovery'
+
+export async function GET(request: NextRequest) {
+  return withErrorHandling(async () => {
+    // Throw custom errors
+    if (!userId) {
+      throw new AuthenticationError('User not authenticated')
+    }
+
+    const user = await db.findUser(userId)
+    if (!user) {
+      throw new NotFoundError('User', userId)
+    }
+
+    // Retry logic for external services
+    const data = await withRetry(
+      () => fetchExternalAPI(),
+      { maxRetries: 3, baseDelay: 1000 }
+    )
+
+    return successResponse(data)
+  })
+}
+```
+
+**Available Error Types**:
+- `ValidationError` - Invalid input data (400)
+- `AuthenticationError` - Missing/invalid credentials (401)
+- `AuthorizationError` - Insufficient permissions (403)
+- `NotFoundError` - Resource not found (404)
+- `ConflictError` - Resource conflict (409)
+- `RateLimitError` - Too many requests (429)
+- `DatabaseError` - Database operation failures (500)
+- `ExternalServiceError` - Third-party API failures (502/503)
+
+**Error Handling Features**:
+- ✅ Automatic error logging with context
+- ✅ Error recovery strategies (retry, fallback, redirect)
+- ✅ Circuit breaker pattern for failing services
+- ✅ Type-safe error handling
+- ✅ Production-ready error reporting hooks
+
+#### 7. API Responses
+
+Use standardized response builders for all API endpoints:
+
+```typescript
+import {
+  successResponse,
+  errorResponse,
+  paginatedResponse,
+  notFoundResponse,
+  unauthorizedResponse,
+  validationErrorResponse,
+} from '@/lib/api/responses'
+
+// Success response
+export async function GET(request: NextRequest) {
+  const data = await fetchData()
+  return successResponse(data) // 200 OK
+}
+
+// Created response
+export async function POST(request: NextRequest) {
+  const item = await createItem(body)
+  return createdResponse(item, {
+    location: `/api/items/${item.id}`,
+  }) // 201 Created
+}
+
+// Paginated response
+export async function GET(request: NextRequest) {
+  const { limit, offset } = parsePaginationParams(request)
+  const items = await db.findMany({ limit, offset })
+  const total = await db.count()
+
+  return paginatedResponse(items, { total, limit, offset })
+}
+
+// Error responses
+throw new NotFoundError('Project', id) // Automatically converted to 404
+return validationErrorResponse(['Email is required', 'Password too short'])
+```
+
+**Response Format**:
+All responses follow a consistent structure:
+
+```typescript
+// Success
+{
+  "success": true,
+  "data": { ... },
+  "meta": {
+    "timestamp": "2025-11-15T10:30:00Z",
+    "requestId": "req_123",
+    "version": "1.0.0"
+  }
+}
+
+// Error
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Project with ID 123 not found",
+    "details": { ... }
+  },
+  "meta": { ... }
+}
+
+// Paginated
+{
+  "success": true,
+  "data": [ ... ],
+  "pagination": {
+    "total": 100,
+    "limit": 20,
+    "offset": 0,
+    "hasMore": true,
+    "page": 1,
+    "totalPages": 5
+  },
+  "meta": { ... }
+}
+```
 
 ---
 
