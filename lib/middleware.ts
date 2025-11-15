@@ -6,6 +6,22 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from './logger'
+import {
+  initRequestContext,
+  runWithContext,
+  extractContextFromRequest,
+  getRequestId,
+  RequestContext,
+} from './logging/context'
+import { startTimer } from './logging/performance-logger'
+import { handleError } from './errors/error-handler'
+import {
+  errorResponse as buildErrorResponse,
+  successResponse as buildSuccessResponse,
+  unauthorizedResponse,
+  rateLimitResponse,
+} from './api/responses'
+import { AuthenticationError, RateLimitError } from './errors/error-types'
 
 // ============================================================================
 // Rate Limiting (In-Memory)
@@ -276,6 +292,7 @@ export function successResponse(
 
 /**
  * Catch-all error handler for API routes
+ * @deprecated Use withEnhancedErrorHandling for better error handling
  */
 export async function withErrorHandling(
   handler: () => Promise<NextResponse>
@@ -290,6 +307,24 @@ export async function withErrorHandling(
       error.status || 500,
       process.env.NODE_ENV === 'development' ? error.stack : undefined
     )
+  }
+}
+
+/**
+ * Enhanced error handler with custom error types
+ */
+export async function withEnhancedErrorHandling(
+  handler: () => Promise<NextResponse>
+): Promise<NextResponse> {
+  try {
+    return await handler()
+  } catch (error: any) {
+    const errorInfo = handleError(error)
+
+    return buildErrorResponse(error, {
+      status: errorInfo.statusCode,
+      requestId: getRequestId(),
+    })
   }
 }
 
@@ -360,4 +395,141 @@ export function sanitize(input: string): string {
     .replace(/javascript:/gi, '')
     .replace(/on\w+=/gi, '')
     .trim()
+}
+
+// ============================================================================
+// Enhanced Middleware with Request Context & Performance Tracking
+// ============================================================================
+
+/**
+ * Request ID middleware - Add request ID to all requests
+ */
+export async function withRequestId(
+  handler: (context: RequestContext) => Promise<NextResponse>
+): (request: NextRequest) => Promise<NextResponse> {
+  return async (request: NextRequest) => {
+    // Extract context from request
+    const contextData = extractContextFromRequest(request)
+    const context = initRequestContext(contextData)
+
+    // Run handler with context
+    const response = await runWithContext(context, () => handler(context))
+
+    // Add request ID to response headers
+    response.headers.set('X-Request-Id', context.requestId)
+
+    return response
+  }
+}
+
+/**
+ * Performance monitoring middleware
+ */
+export async function withPerformanceTracking(
+  handler: () => Promise<NextResponse>
+): Promise<NextResponse> {
+  const timer = startTimer('api_request')
+
+  try {
+    const response = await handler()
+    const duration = timer.end()
+
+    // Add performance header
+    response.headers.set('X-Response-Time', `${duration}ms`)
+
+    // Log slow requests
+    if (duration > 1000) {
+      logger.warn(`Slow request completed in ${duration}ms`)
+    }
+
+    return response
+  } catch (error) {
+    timer.end()
+    throw error
+  }
+}
+
+/**
+ * Complete middleware stack - combines all enhancements
+ */
+export async function withMiddleware(
+  request: NextRequest,
+  handler: (context: RequestContext) => Promise<NextResponse>,
+  options: {
+    auth?: boolean
+    rateLimit?: { maxRequests?: number; windowMs?: number }
+    performanceTracking?: boolean
+  } = {}
+): Promise<NextResponse> {
+  const { auth = false, rateLimit, performanceTracking = true } = options
+
+  // Extract context
+  const contextData = extractContextFromRequest(request)
+  const context = initRequestContext(contextData)
+
+  // Run with context
+  return runWithContext(context, async () => {
+    // Start performance timer
+    const timer = performanceTracking ? startTimer('api_request') : null
+
+    try {
+      // Rate limiting
+      if (rateLimit) {
+        const key = getClientIp(request)
+        const { allowed, remaining, resetTime } = checkRateLimit(
+          key,
+          rateLimit.maxRequests,
+          rateLimit.windowMs
+        )
+
+        if (!allowed) {
+          throw new RateLimitError('Too many requests', Math.ceil((resetTime - Date.now()) / 1000))
+        }
+      }
+
+      // Authentication
+      if (auth) {
+        const token = extractBearerToken(request)
+        if (!token) {
+          throw new AuthenticationError('No token provided')
+        }
+
+        const decoded = await verifyToken(token)
+        if (!decoded || !decoded.userId) {
+          throw new AuthenticationError('Invalid token')
+        }
+
+        // Add user ID to context
+        context.userId = decoded.userId
+      }
+
+      // Execute handler
+      const response = await handler(context)
+
+      // Add headers
+      response.headers.set('X-Request-Id', context.requestId)
+
+      if (timer) {
+        const duration = timer.end()
+        response.headers.set('X-Response-Time', `${duration}ms`)
+      }
+
+      return response
+    } catch (error) {
+      if (timer) timer.end()
+
+      // Handle error with new error system
+      const errorInfo = handleError(error, {
+        requestId: context.requestId,
+        userId: context.userId,
+        path: context.path,
+        method: context.method,
+      })
+
+      return buildErrorResponse(error, {
+        status: errorInfo.statusCode,
+        requestId: context.requestId,
+      })
+    }
+  })
 }
