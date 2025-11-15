@@ -43,7 +43,10 @@ Terra Atlas is revolutionizing energy investment by connecting everyday investor
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js 15.5, React 19, TypeScript, Tailwind CSS
-- **Backend**: Supabase (PostgreSQL), Prisma ORM, Drizzle
+- **Backend**: Supabase (PostgreSQL), Drizzle ORM
+- **Validation**: Zod schemas with runtime type safety
+- **Testing**: Jest 29 with React Testing Library
+- **Code Quality**: Prettier, ESLint, TypeScript strict mode
 - **Maps**: Mapbox GL for interactive visualizations
 - **Deployment**: Vercel with edge functions
 - **Data Sources**: FERC, USACE, SMR pipelines, GIS databases
@@ -77,12 +80,20 @@ npm run dev
 
 ### Environment Variables
 
+**Note**: All environment variables are validated at startup. Missing or invalid values will prevent the application from starting with clear error messages.
+
 ```env
+# Required
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+JWT_SECRET=your-secure-32-char-minimum-secret
+
+# Optional
 SUPABASE_SERVICE_ROLE_KEY=your_service_key
 DATABASE_URL=your_postgres_connection_string
 ```
+
+See `lib/env.ts` for complete environment configuration and validation.
 
 ## 📁 Project Structure
 

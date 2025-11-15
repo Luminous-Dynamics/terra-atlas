@@ -63,6 +63,37 @@ curl http://localhost:3002/api/health
 curl http://localhost:3002/api/stats
 ```
 
+### VS Code Setup (Recommended)
+
+The project includes VS Code configuration for the best development experience:
+
+**Automatic Setup**:
+1. Open the project in VS Code
+2. Install recommended extensions (you'll see a popup)
+3. Settings will be applied automatically
+
+**What's Configured**:
+- ✅ Format on Save (Prettier)
+- ✅ Auto fix on Save (ESLint)
+- ✅ TypeScript import organization
+- ✅ Tailwind CSS IntelliSense
+- ✅ Debugging configurations (Next.js, Jest)
+
+**Manual Extension Installation** (if needed):
+```bash
+# Install all recommended extensions at once
+code --install-extension dbaeumer.vscode-eslint
+code --install-extension esbenp.prettier-vscode
+# ... (or use the Extensions panel)
+```
+
+**Debugging**: Use F5 to start debugging. Choose from:
+- Next.js: server-side
+- Next.js: client-side
+- Next.js: full-stack
+- Jest: current file
+- Jest: all tests
+
 ---
 
 ## 📁 Project Structure
@@ -89,7 +120,13 @@ terra-atlas/
 │   ├── middleware.ts        # API middleware (rate limiting, auth)
 │   ├── logger.ts            # Logging utility
 │   ├── auth.ts              # Authentication utilities
-│   ├── validation.ts        # Input validation (Zod)
+│   ├── env.ts               # Environment validation
+│   ├── constants.ts         # Application constants
+│   ├── validation/          # Input validation schemas (Zod)
+│   │   ├── common.schemas.ts    # Reusable primitives
+│   │   ├── auth.schemas.ts      # Authentication
+│   │   ├── projects.schemas.ts  # Projects
+│   │   └── investments.schemas.ts # Investments
 │   ├── types/               # TypeScript types
 │   └── drizzle/             # Database ORM
 │
@@ -260,6 +297,44 @@ export async function POST(request: NextRequest) {
 }
 ```
 
+#### 5. Input Validation
+
+All API endpoints use **Zod** for runtime validation:
+
+```typescript
+import { loginSchema, type LoginInput } from '@/lib/validation'
+import { validate } from '@/lib/validation/common.schemas'
+
+export async function POST(request: NextRequest) {
+  return withErrorHandling(async () => {
+    const body = await request.json()
+
+    // Validate input
+    const result = validate(loginSchema, body)
+    if (!result.success) {
+      return errorResponse('Validation failed', 400, result.errors)
+    }
+
+    const data: LoginInput = result.data // Type-safe!
+
+    // Your logic here...
+  })
+}
+```
+
+**Available Schema Modules**:
+- `common.schemas.ts` - Reusable primitives (email, password, pagination, etc.)
+- `auth.schemas.ts` - Login, register, password reset
+- `projects.schemas.ts` - Project CRUD operations
+- `investments.schemas.ts` - Investment management
+
+**Key Benefits**:
+- ✅ Runtime type validation
+- ✅ Automatic TypeScript type inference
+- ✅ Sanitized input (trimming, normalization)
+- ✅ Detailed error messages
+- ✅ Reusable validation logic
+
 ---
 
 ## 📏 Code Standards
@@ -305,6 +380,29 @@ export function Button({ label, onClick, variant = 'primary' }: ButtonProps) {
 - **Functions**: `camelCase`
 - **Constants**: `UPPER_SNAKE_CASE`
 - **Interfaces**: `PascalCase` (prefix with `I` optional)
+
+### Code Formatting
+
+We use **Prettier** for automatic code formatting:
+
+```bash
+# Format all files
+npx prettier --write .
+
+# Check formatting
+npx prettier --check .
+
+# VS Code: Format on save (enabled by default)
+```
+
+**Prettier Config** (`.prettierrc`):
+- No semicolons
+- Single quotes
+- 100 character line width
+- 2-space indentation
+- LF line endings
+
+**Best Practice**: Enable "Format on Save" in VS Code settings (already configured in `.vscode/settings.json`)
 
 ---
 
@@ -363,27 +461,53 @@ describe('Rate Limiting', () => {
 
 ### Environment Variables
 
+**Environment Validation**: All environment variables are validated at startup using Zod (see `lib/env.ts`). If required variables are missing or invalid, the application will fail fast with clear error messages.
+
 **Required** for production:
 
 ```env
-# Supabase
+# Supabase (Required)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-# Authentication
-JWT_SECRET=your-secure-jwt-secret-min-32-chars
+# Authentication (Required)
+JWT_SECRET=your-secure-jwt-secret-min-32-chars  # Must be 32+ characters
 
-# Database
+# Application
+NODE_ENV=production
+NEXT_PUBLIC_BASE_URL=https://your-domain.com
+PORT=3002
+
+# Database (Optional - defaults to SQLite locally)
 DATABASE_URL=postgresql://user:pass@host:port/db
 
-# Stripe (if using payments)
+# Stripe (Optional - for payment features)
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
 STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 
-# Application
-NEXT_PUBLIC_BASE_URL=https://your-domain.com
+# Monitoring (Optional)
+NEXT_PUBLIC_SENTRY_DSN=https://...@sentry.io/...
+SENTRY_AUTH_TOKEN=...
+
+# Analytics (Optional)
+NEXT_PUBLIC_GA_ID=G-...
+NEXT_PUBLIC_GTM_ID=GTM-...
+```
+
+**Validation Helpers**:
+```typescript
+import { getEnv, validateEnv, checkRequiredEnvVars } from '@/lib/env'
+
+// Get validated env vars (throws if invalid)
+const env = getEnv()
+
+// Check validation status
+const status = checkRequiredEnvVars()
+if (!status.hasAllRequired) {
+  console.error('Missing:', status.missing)
+}
 ```
 
 ### Deployment Steps
@@ -514,4 +638,4 @@ Welcome to the team! If you have any questions, don't hesitate to ask.
 
 ---
 
-_Last updated: 2025-11-14_
+_Last updated: 2025-11-15_
