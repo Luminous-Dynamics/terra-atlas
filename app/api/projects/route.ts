@@ -16,6 +16,7 @@ import { startTimer } from '@/lib/logging/performance-logger'
 import { DatabaseError } from '@/lib/errors'
 import { listProjectsQuerySchema } from '@/lib/validation/project.schemas'
 import { RATE_LIMITS } from '@/lib/config'
+import { withCache, createCacheKey, CACHE_DURATIONS, CACHE_PREFIXES } from '@/lib/cache'
 
 /**
  * GET /api/projects
@@ -46,177 +47,220 @@ export async function GET(request: NextRequest) {
 
       timer.mark('validation_complete')
 
+      // Generate cache key from query parameters
+      const cacheKey = createCacheKey(
+        CACHE_PREFIXES.PROJECTS,
+        'list',
+        { type, status, country, state, search, minCapacity, maxCapacity, operational, sortBy, sortOrder, limit, offset }
+      )
+
+      timer.mark('cache_key_generated')
+
       let db: Database.Database | null = null
 
       try {
-        // Connect to database
-        timer.mark('database_connection_start')
-        db = new Database(path.join(process.cwd(), 'data', 'terra-atlas-local.db'), {
-          readonly: true,
-        })
-        timer.mark('database_connection_complete')
+        // Use cache-aside pattern
+        const cachedData = await withCache(
+          cacheKey,
+          async () => {
+            timer.mark('cache_miss_fetching')
 
-        // Build query with filters
-        const queryParts: string[] = []
-        const params: any[] = []
+            // Connect to database
+            timer.mark('database_connection_start')
+            db = new Database(path.join(process.cwd(), 'data', 'terra-atlas-local.db'), {
+              readonly: true,
+            })
+            timer.mark('database_connection_complete')
 
-        // Base SELECT
-        let query = `SELECT
-          id,
-          project_name as name,
-          project_type as type,
-          developer,
-          owner_type,
-          state,
-          county,
-          region,
-          state as country,
-          latitude,
-          longitude,
-          capacity_mw,
-          energy_source,
-          technology_type,
-          status,
-          operational,
-          year_completed,
-          total_cost as investment,
-          annual_revenue_potential,
-          carbon_avoided_tons_per_year
-        FROM projects WHERE 1=1`
+            // Build query with filters
+            const queryParts: string[] = []
+            const params: any[] = []
 
-        // Apply filters
-        if (type) {
-          queryParts.push('project_type = ?')
-          params.push(type)
-        }
+            // Base SELECT
+            let query = `SELECT
+              id,
+              project_name as name,
+              project_type as type,
+              developer,
+              owner_type,
+              state,
+              county,
+              region,
+              state as country,
+              latitude,
+              longitude,
+              capacity_mw,
+              energy_source,
+              technology_type,
+              status,
+              operational,
+              year_completed,
+              total_cost as investment,
+              annual_revenue_potential,
+              carbon_avoided_tons_per_year
+            FROM projects WHERE 1=1`
 
-        if (status) {
-          queryParts.push('status = ?')
-          params.push(status)
-        }
+            // Apply filters
+            if (type) {
+              queryParts.push('project_type = ?')
+              params.push(type)
+            }
 
-        if (country) {
-          queryParts.push('state = ?')
-          params.push(country)
-        }
+            if (status) {
+              queryParts.push('status = ?')
+              params.push(status)
+            }
 
-        if (state) {
-          queryParts.push('state = ?')
-          params.push(state)
-        }
+            if (country) {
+              queryParts.push('state = ?')
+              params.push(country)
+            }
 
-        if (operational !== undefined) {
-          queryParts.push('operational = ?')
-          params.push(operational ? 1 : 0)
-        }
+            if (state) {
+              queryParts.push('state = ?')
+              params.push(state)
+            }
 
-        if (minCapacity !== undefined) {
-          queryParts.push('capacity_mw >= ?')
-          params.push(minCapacity)
-        }
+            if (operational !== undefined) {
+              queryParts.push('operational = ?')
+              params.push(operational ? 1 : 0)
+            }
 
-        if (maxCapacity !== undefined) {
-          queryParts.push('capacity_mw <= ?')
-          params.push(maxCapacity)
-        }
+            if (minCapacity !== undefined) {
+              queryParts.push('capacity_mw >= ?')
+              params.push(minCapacity)
+            }
 
-        if (search) {
-          queryParts.push('(project_name LIKE ? OR state LIKE ? OR developer LIKE ?)')
-          const searchPattern = `%${search}%`
-          params.push(searchPattern, searchPattern, searchPattern)
-        }
+            if (maxCapacity !== undefined) {
+              queryParts.push('capacity_mw <= ?')
+              params.push(maxCapacity)
+            }
 
-        // Add WHERE clauses
-        if (queryParts.length > 0) {
-          query += ' AND ' + queryParts.join(' AND ')
-        }
+            if (search) {
+              queryParts.push('(project_name LIKE ? OR state LIKE ? OR developer LIKE ?)')
+              const searchPattern = `%${search}%`
+              params.push(searchPattern, searchPattern, searchPattern)
+            }
 
-        // Add ORDER BY
-        const sortColumn = {
-          name: 'project_name',
-          capacity: 'capacity_mw',
-          investment: 'total_cost',
-          created: 'id', // Using ID as proxy for creation date
-          status: 'status',
-        }[sortBy] || 'id'
+            // Add WHERE clauses
+            if (queryParts.length > 0) {
+              query += ' AND ' + queryParts.join(' AND ')
+            }
 
-        query += ` ORDER BY ${sortColumn} ${sortOrder.toUpperCase()}`
+            // Add ORDER BY
+            const sortColumn = {
+              name: 'project_name',
+              capacity: 'capacity_mw',
+              investment: 'total_cost',
+              created: 'id', // Using ID as proxy for creation date
+              status: 'status',
+            }[sortBy] || 'id'
 
-        // Add pagination
-        query += ' LIMIT ? OFFSET ?'
-        params.push(limit, offset)
+            query += ` ORDER BY ${sortColumn} ${sortOrder.toUpperCase()}`
 
-        // Execute main query
-        timer.mark('query_execution_start')
-        const stmt = db.prepare(query)
-        const projects = stmt.all(...params)
-        timer.mark('query_execution_complete')
+            // Add pagination
+            query += ' LIMIT ? OFFSET ?'
+            params.push(limit, offset)
 
-        // Get total count with same filters
-        let countQuery = 'SELECT COUNT(*) as count FROM projects WHERE 1=1'
-        const countParams: any[] = []
+            // Execute main query
+            timer.mark('query_execution_start')
+            const stmt = db.prepare(query)
+            const projects = stmt.all(...params)
+            timer.mark('query_execution_complete')
 
-        if (queryParts.length > 0) {
-          countQuery += ' AND ' + queryParts.join(' AND ')
-          // Copy filter params (excluding LIMIT/OFFSET)
-          for (let i = 0; i < params.length - 2; i++) {
-            countParams.push(params[i])
-          }
-        }
+            // Get total count with same filters
+            let countQuery = 'SELECT COUNT(*) as count FROM projects WHERE 1=1'
+            const countParams: any[] = []
 
-        timer.mark('count_query_start')
-        const countStmt = db.prepare(countQuery)
-        const { count } = countStmt.get(...countParams) as any
-        timer.mark('count_query_complete')
+            if (queryParts.length > 0) {
+              countQuery += ' AND ' + queryParts.join(' AND ')
+              // Copy filter params (excluding LIMIT/OFFSET)
+              for (let i = 0; i < params.length - 2; i++) {
+                countParams.push(params[i])
+              }
+            }
 
-        // Get metadata for filters (cached values to avoid expensive queries)
-        timer.mark('metadata_query_start')
-        const types = db
-          .prepare('SELECT DISTINCT project_type as type FROM projects WHERE project_type IS NOT NULL ORDER BY project_type')
-          .all()
+            timer.mark('count_query_start')
+            const countStmt = db.prepare(countQuery)
+            const { count } = countStmt.get(...countParams) as any
+            timer.mark('count_query_complete')
 
-        const statuses = db
-          .prepare('SELECT DISTINCT status FROM projects WHERE status IS NOT NULL ORDER BY status')
-          .all()
+            // Get metadata for filters (cached values to avoid expensive queries)
+            timer.mark('metadata_query_start')
+            const types = db
+              .prepare('SELECT DISTINCT project_type as type FROM projects WHERE project_type IS NOT NULL ORDER BY project_type')
+              .all()
 
-        const states = db
-          .prepare('SELECT DISTINCT state FROM projects WHERE state IS NOT NULL ORDER BY state LIMIT 100')
-          .all()
-        timer.mark('metadata_query_complete')
+            const statuses = db
+              .prepare('SELECT DISTINCT status FROM projects WHERE status IS NOT NULL ORDER BY status')
+              .all()
 
-        db.close()
-        db = null
+            const states = db
+              .prepare('SELECT DISTINCT state FROM projects WHERE state IS NOT NULL ORDER BY state LIMIT 100')
+              .all()
+            timer.mark('metadata_query_complete')
+
+            db.close()
+            db = null
+
+            // Return data to be cached
+            return {
+              projects,
+              count,
+              types: types.map((t: any) => t.type),
+              statuses: statuses.map((s: any) => s.status),
+              countries: states.map((s: any) => s.state),
+            }
+          },
+          { ttl: CACHE_DURATIONS.SHORT } // 5 minutes cache
+        )
+
+        timer.mark('data_fetched')
 
         const duration = timer.end()
 
         structuredLogger.info('Projects fetched successfully', {
           operation: 'list_projects',
-          count: projects.length,
-          total: count,
+          count: cachedData.projects.length,
+          total: cachedData.count,
           duration,
+          cached: cachedData !== null,
           filters: { type, status, country, state, search, minCapacity, maxCapacity, operational },
         })
 
         // Return paginated response with metadata
         return paginatedResponse(
-          projects,
+          cachedData.projects,
           {
-            total: count,
+            total: cachedData.count,
             limit,
             offset,
           },
           {
             requestId: context.requestId,
+            headers: {
+              'Cache-Control': `public, max-age=${CACHE_DURATIONS.SHORT}`,
+              'X-Cache-Key': cacheKey,
+            },
             metadata: {
-              types: types.map((t: any) => t.type),
-              statuses: statuses.map((s: any) => s.status),
-              countries: states.map((s: any) => s.state),
+              types: cachedData.types,
+              statuses: cachedData.statuses,
+              countries: cachedData.countries,
               performance: {
                 validation: timer.getMark('validation_complete'),
-                database_connection: timer.getMark('database_connection_complete')! - timer.getMark('database_connection_start')!,
-                query_execution: timer.getMark('query_execution_complete')! - timer.getMark('query_execution_start')!,
-                count_query: timer.getMark('count_query_complete')! - timer.getMark('count_query_start')!,
-                metadata_query: timer.getMark('metadata_query_complete')! - timer.getMark('metadata_query_start')!,
+                cache_key_generation: timer.getMark('cache_key_generated')! - timer.getMark('validation_complete')!,
+                database_connection: timer.getMark('database_connection_complete')
+                  ? timer.getMark('database_connection_complete')! - timer.getMark('database_connection_start')!
+                  : 0,
+                query_execution: timer.getMark('query_execution_complete')
+                  ? timer.getMark('query_execution_complete')! - timer.getMark('query_execution_start')!
+                  : 0,
+                count_query: timer.getMark('count_query_complete')
+                  ? timer.getMark('count_query_complete')! - timer.getMark('count_query_start')!
+                  : 0,
+                metadata_query: timer.getMark('metadata_query_complete')
+                  ? timer.getMark('metadata_query_complete')! - timer.getMark('metadata_query_start')!
+                  : 0,
                 total: duration,
               },
             },

@@ -15,6 +15,15 @@ import { startTimer } from '@/lib/logging/performance-logger'
 import { NotFoundError, DatabaseError, ValidationError } from '@/lib/errors'
 import { projectIdSchema } from '@/lib/validation/project.schemas'
 import { RATE_LIMITS } from '@/lib/config'
+import {
+  withCache,
+  createCacheKey,
+  CACHE_DURATIONS,
+  CACHE_PREFIXES,
+  generateETag,
+  hasMatchingETag,
+  notModifiedResponse
+} from '@/lib/cache'
 
 /**
  * GET /api/projects/:id
@@ -45,114 +54,149 @@ export async function GET(
 
       timer.mark('validation_complete')
 
+      // Generate cache key
+      const cacheKey = createCacheKey(CACHE_PREFIXES.PROJECT, projectId)
+      timer.mark('cache_key_generated')
+
       let db: Database.Database | null = null
 
       try {
-        // Connect to database
-        timer.mark('database_connection_start')
-        db = new Database(path.join(process.cwd(), 'data', 'terra-atlas-local.db'), {
-          readonly: true,
-        })
-        timer.mark('database_connection_complete')
+        // Use cache-aside pattern with longer TTL for individual projects
+        const enhancedProject = await withCache(
+          cacheKey,
+          async () => {
+            timer.mark('cache_miss_fetching')
 
-        // Query for project with all details
-        const query = `SELECT
-          id,
-          project_name as name,
-          project_type as type,
-          developer,
-          owner_type,
-          state,
-          county,
-          region,
-          state as country,
-          latitude,
-          longitude,
-          capacity_mw,
-          energy_source,
-          technology_type,
-          status,
-          operational,
-          construction_start,
-          commercial_operation,
-          year_completed,
-          total_cost as investment,
-          total_cost as investment_needed,
-          cost_per_kw,
-          annual_revenue_potential,
-          payback_period_years,
-          levelized_cost_per_mwh,
-          interconnection_status,
-          transmission_owner,
-          point_of_interconnection,
-          interconnection_cost,
-          grid_connection_voltage_kv,
-          carbon_avoided_tons_per_year as co2_saved_annual,
-          environmental_score,
-          community_support_score,
-          technical_feasibility_score,
-          overall_viability_score,
-          jobs_created,
-          data_source,
-          last_updated
-        FROM projects WHERE id = ?`
+            // Connect to database
+            timer.mark('database_connection_start')
+            db = new Database(path.join(process.cwd(), 'data', 'terra-atlas-local.db'), {
+              readonly: true,
+            })
+            timer.mark('database_connection_complete')
 
-        timer.mark('query_execution_start')
-        const project = db.prepare(query).get(projectId)
-        timer.mark('query_execution_complete')
+            // Query for project with all details
+            const query = `SELECT
+              id,
+              project_name as name,
+              project_type as type,
+              developer,
+              owner_type,
+              state,
+              county,
+              region,
+              state as country,
+              latitude,
+              longitude,
+              capacity_mw,
+              energy_source,
+              technology_type,
+              status,
+              operational,
+              construction_start,
+              commercial_operation,
+              year_completed,
+              total_cost as investment,
+              total_cost as investment_needed,
+              cost_per_kw,
+              annual_revenue_potential,
+              payback_period_years,
+              levelized_cost_per_mwh,
+              interconnection_status,
+              transmission_owner,
+              point_of_interconnection,
+              interconnection_cost,
+              grid_connection_voltage_kv,
+              carbon_avoided_tons_per_year as co2_saved_annual,
+              environmental_score,
+              community_support_score,
+              technical_feasibility_score,
+              overall_viability_score,
+              jobs_created,
+              data_source,
+              last_updated
+            FROM projects WHERE id = ?`
 
-        db.close()
-        db = null
+            timer.mark('query_execution_start')
+            const project = db.prepare(query).get(projectId)
+            timer.mark('query_execution_complete')
 
-        if (!project) {
-          throw new NotFoundError('Project', projectId)
-        }
+            db.close()
+            db = null
 
-        // Add calculated/enhanced fields
-        const enhancedProject = {
-          ...project,
-          // Financial calculations
-          investment_raised: Math.round((project.investment_needed || 0) * 0.35), // 35% raised
-          min_investment: 100,
-          irr: calculateIRR(project.type),
-          roi_percentage: calculateROI(project.type),
+            if (!project) {
+              throw new NotFoundError('Project', projectId)
+            }
 
-          // Timeline
-          completion_date: project.year_completed
-            ? `${project.year_completed}-Q3`
-            : estimateCompletion(project.status),
+            // Add calculated/enhanced fields
+            return {
+              ...project,
+              // Financial calculations
+              investment_raised: Math.round((project.investment_needed || 0) * 0.35), // 35% raised
+              min_investment: 100,
+              irr: calculateIRR(project.type),
+              roi_percentage: calculateROI(project.type),
 
-          // Additional details
-          power_offtaker: 'Regional Utility Co.', // TODO: Get from database when available
-          total_homes_powered: calculateHomesPowered(project.capacity_mw),
-          location: formatLocation(project),
-          description: generateDescription(project),
+              // Timeline
+              completion_date: project.year_completed
+                ? `${project.year_completed}-Q3`
+                : estimateCompletion(project.status),
 
-          // Metadata
-          _meta: {
-            dataSource: project.data_source,
-            lastUpdated: project.last_updated,
-            calculated: ['investment_raised', 'total_homes_powered', 'irr', 'roi_percentage'],
+              // Additional details
+              power_offtaker: 'Regional Utility Co.', // TODO: Get from database when available
+              total_homes_powered: calculateHomesPowered(project.capacity_mw),
+              location: formatLocation(project),
+              description: generateDescription(project),
+
+              // Metadata
+              _meta: {
+                dataSource: project.data_source,
+                lastUpdated: project.last_updated,
+                calculated: ['investment_raised', 'total_homes_powered', 'irr', 'roi_percentage'],
+              },
+            }
           },
+          { ttl: CACHE_DURATIONS.MEDIUM } // 15 minutes cache for individual projects
+        )
+
+        timer.mark('data_fetched')
+
+        // Generate ETag for conditional requests
+        const etag = generateETag(enhancedProject)
+
+        // Check if client has current version (304 Not Modified)
+        if (hasMatchingETag(request, etag)) {
+          structuredLogger.info('ETag matched - returning 304', {
+            operation: 'get_project',
+            projectId,
+            etag,
+          })
+          return notModifiedResponse(etag)
         }
 
         const duration = timer.endAndLog({
           operation: 'get_project',
           projectId,
           success: true,
+          cached: enhancedProject !== null,
         })
 
         return successResponse(enhancedProject, {
           requestId: context.requestId,
+          headers: {
+            'Cache-Control': `public, max-age=${CACHE_DURATIONS.MEDIUM}`,
+            'ETag': etag,
+            'X-Cache-Key': cacheKey,
+          },
           metadata: {
             performance: {
               validation: timer.getMark('validation_complete'),
-              database_connection:
-                timer.getMark('database_connection_complete')! -
-                timer.getMark('database_connection_start')!,
-              query_execution:
-                timer.getMark('query_execution_complete')! -
-                timer.getMark('query_execution_start')!,
+              cache_key_generation: timer.getMark('cache_key_generated')! - timer.getMark('validation_complete')!,
+              database_connection: timer.getMark('database_connection_complete')
+                ? timer.getMark('database_connection_complete')! - timer.getMark('database_connection_start')!
+                : 0,
+              query_execution: timer.getMark('query_execution_complete')
+                ? timer.getMark('query_execution_complete')! - timer.getMark('query_execution_start')!
+                : 0,
               total: duration,
             },
           },

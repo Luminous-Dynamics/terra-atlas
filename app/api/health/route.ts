@@ -5,6 +5,7 @@ import { APP_CONFIG, SUPABASE_CONFIG } from '../../../lib/config'
 import { HTTP_STATUS } from '../../../lib/constants'
 import { structuredLogger } from '../../../lib/logging/structured-logger'
 import { startTimer } from '../../../lib/logging/performance-logger'
+import { getCacheStats } from '../../../lib/cache'
 import Database from 'better-sqlite3'
 import path from 'path'
 
@@ -187,6 +188,47 @@ export async function GET(request: NextRequest) {
       }
 
       // ========================================================================
+      // Cache Health
+      // ========================================================================
+      try {
+        const cacheStats = getCacheStats()
+        checks.cache = {
+          status: 'healthy',
+          enabled: true,
+          size: cacheStats.size,
+          hits: cacheStats.hits,
+          misses: cacheStats.misses,
+          hitRate: `${(cacheStats.hitRate * 100).toFixed(2)}%`,
+          hitRateDecimal: cacheStats.hitRate,
+          memoryUsage: formatBytes(cacheStats.memoryUsage),
+          memoryUsageBytes: cacheStats.memoryUsage,
+          evictions: cacheStats.evictions,
+          expirations: cacheStats.expirations,
+          healthScore: calculateCacheHealth(cacheStats),
+        }
+
+        // Warn if cache hit rate is low (after warming period)
+        const totalRequests = cacheStats.hits + cacheStats.misses
+        if (totalRequests > 100 && cacheStats.hitRate < 0.5) {
+          checks.cache.status = 'degraded'
+          checks.cache.warning = 'Low cache hit rate detected'
+          structuredLogger.warn('Low cache hit rate', {
+            hitRate: cacheStats.hitRate,
+            totalRequests,
+          })
+        }
+      } catch (error) {
+        checks.cache = {
+          status: 'unhealthy',
+          enabled: false,
+          error: error instanceof Error ? error.message : 'Cache stats unavailable',
+        }
+        structuredLogger.error('Cache health check failed', error, {
+          operation: 'cache_health_check',
+        })
+      }
+
+      // ========================================================================
       // Overall Status & Response
       // ========================================================================
       const duration = timer.end()
@@ -273,4 +315,37 @@ function formatBytes(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
 
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`
+}
+
+/**
+ * Calculate cache health score (0-100)
+ * Based on hit rate, size, and eviction rate
+ */
+function calculateCacheHealth(stats: any): number {
+  let score = 100
+
+  // Hit rate component (50 points max)
+  const hitRateScore = Math.min(stats.hitRate * 50, 50)
+  score = hitRateScore
+
+  // Eviction rate component (25 points max)
+  const totalRequests = stats.hits + stats.misses
+  const evictionRate = totalRequests > 0 ? stats.evictions / totalRequests : 0
+  const evictionScore = Math.max(25 - evictionRate * 100, 0)
+  score += evictionScore
+
+  // Size utilization component (25 points max)
+  // Ideal is 50-80% utilization
+  const sizeUtilization = stats.size / 1000 // Assuming max 1000 entries
+  let sizeScore = 0
+  if (sizeUtilization >= 0.5 && sizeUtilization <= 0.8) {
+    sizeScore = 25
+  } else if (sizeUtilization < 0.5) {
+    sizeScore = sizeUtilization * 50 // Linear from 0 to 25
+  } else {
+    sizeScore = Math.max(25 - (sizeUtilization - 0.8) * 100, 0)
+  }
+  score += sizeScore
+
+  return Math.round(score)
 }
