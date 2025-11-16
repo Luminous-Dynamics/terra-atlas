@@ -30,6 +30,11 @@ import {
   isInvestmentModifiable,
 } from '@/lib/validation/investment.schemas'
 import { RATE_LIMITS, SUPABASE_CONFIG } from '@/lib/config'
+import {
+  onInvestmentCreated,
+  onInvestmentUpdated,
+  invalidateStats,
+} from '@/lib/cache'
 
 // Validate Supabase configuration at module load
 if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.serviceRoleKey) {
@@ -333,6 +338,17 @@ export async function POST(request: NextRequest) {
           expectedReturn: expected_return,
         })
 
+        // Invalidate caches
+        timer.mark('cache_invalidation_start')
+        await onInvestmentCreated(investment.id, context.userId!)
+        timer.mark('cache_invalidation_complete')
+
+        structuredLogger.info('Cache invalidated after investment creation', {
+          operation: 'create_investment',
+          investmentId: investment.id,
+          userId: context.userId,
+        })
+
         return createdResponse(investment, {
           location: `/api/investments/${investment.id}`,
           requestId: context.requestId,
@@ -347,6 +363,9 @@ export async function POST(request: NextRequest) {
               transaction_insert:
                 timer.getMark('transaction_insert_complete')! -
                 timer.getMark('transaction_insert_start')!,
+              cache_invalidation:
+                timer.getMark('cache_invalidation_complete')! -
+                timer.getMark('cache_invalidation_start')!,
               total: duration,
             },
           },
@@ -512,6 +531,17 @@ export async function PATCH(request: NextRequest) {
           newStatus: status,
         })
 
+        // Invalidate caches
+        timer.mark('cache_invalidation_start')
+        await onInvestmentUpdated(investment_id, context.userId!)
+        timer.mark('cache_invalidation_complete')
+
+        structuredLogger.info('Cache invalidated after investment update', {
+          operation: 'update_investment',
+          investmentId: investment_id,
+          userId: context.userId,
+        })
+
         return successResponse(updatedInvestment, {
           requestId: context.requestId,
           metadata: {
@@ -526,6 +556,9 @@ export async function PATCH(request: NextRequest) {
               transaction_log:
                 timer.getMark('transaction_log_complete')! -
                 timer.getMark('transaction_log_start')!,
+              cache_invalidation:
+                timer.getMark('cache_invalidation_complete')! -
+                timer.getMark('cache_invalidation_start')!,
               total: duration,
             },
           },

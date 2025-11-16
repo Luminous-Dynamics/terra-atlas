@@ -824,6 +824,409 @@ npx tsc --noEmit
 
 ---
 
+## 🚀 Phase 4 Features - Production-Grade Infrastructure
+
+### Caching System
+
+**Overview**: Terra Atlas implements a production-grade caching infrastructure with LRU (Least Recently Used) eviction, TTL support, and comprehensive invalidation strategies.
+
+#### Using the Cache
+
+```typescript
+import {
+  withCache,
+  createCacheKey,
+  CACHE_DURATIONS,
+  CACHE_PREFIXES,
+} from '@/lib/cache'
+
+// Basic cache-aside pattern
+export async function GET(request: NextRequest) {
+  const cacheKey = createCacheKey(CACHE_PREFIXES.PROJECTS, 'list', filters)
+
+  const data = await withCache(
+    cacheKey,
+    async () => {
+      // Expensive database query
+      return await db.getProjects(filters)
+    },
+    { ttl: CACHE_DURATIONS.SHORT } // 5 minutes
+  )
+
+  return successResponse(data)
+}
+```
+
+#### Cache Invalidation
+
+```typescript
+import {
+  onProjectCreated,
+  onProjectUpdated,
+  invalidatePattern,
+  invalidateTags,
+} from '@/lib/cache'
+
+// In mutation endpoints (POST/PATCH/DELETE)
+export async function POST(request: NextRequest) {
+  // Create the project
+  const project = await db.createProject(data)
+
+  // Invalidate related caches
+  await onProjectCreated(project.id)
+
+  return createdResponse(project)
+}
+
+// Manual invalidation
+await invalidatePattern('projects:*')  // Clear all project caches
+await invalidateTags(['projects', 'stats'])  // Clear by tags
+```
+
+#### HTTP Caching with ETags
+
+```typescript
+import {
+  generateETag,
+  hasMatchingETag,
+  notModifiedResponse,
+} from '@/lib/cache'
+
+export async function GET(request: NextRequest) {
+  const project = await fetchProject(id)
+
+  // Generate ETag from data
+  const etag = generateETag(project)
+
+  // Return 304 if client has current version
+  if (hasMatchingETag(request, etag)) {
+    return notModifiedResponse(etag)
+  }
+
+  // Return full response with ETag header
+  return successResponse(project, {
+    headers: {
+      'ETag': etag,
+      'Cache-Control': 'public, max-age=900',
+    }
+  })
+}
+```
+
+#### Cache Configuration
+
+```typescript
+// lib/cache/index.ts exports these constants
+CACHE_DURATIONS = {
+  VERY_SHORT: 60,    // 1 minute
+  SHORT: 300,        // 5 minutes (default for lists)
+  MEDIUM: 900,       // 15 minutes (default for details)
+  LONG: 3600,        // 1 hour
+  VERY_LONG: 86400,  // 24 hours
+}
+
+CACHE_PREFIXES = {
+  PROJECTS: 'projects',
+  PROJECT: 'project',
+  INVESTMENTS: 'investments',
+  STATS: 'stats',
+  // ...
+}
+```
+
+#### Cache Monitoring
+
+Access cache statistics via the health endpoint:
+
+```bash
+curl https://your-domain.com/api/health
+```
+
+Response includes cache health:
+```json
+{
+  "checks": {
+    "cache": {
+      "status": "healthy",
+      "size": 347,
+      "hits": 12450,
+      "misses": 3821,
+      "hitRate": "76.52%",
+      "memoryUsage": "4.32 MB",
+      "healthScore": 87
+    }
+  }
+}
+```
+
+#### Admin Cache Management
+
+```typescript
+// GET /api/admin/cache - View detailed stats
+curl -H "Authorization: Bearer $TOKEN" \
+  https://your-domain.com/api/admin/cache
+
+// POST /api/admin/cache - Clear caches
+curl -X POST \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"operation": "clear_pattern", "pattern": "projects:*"}' \
+  https://your-domain.com/api/admin/cache
+```
+
+#### Best Practices
+
+1. **Always cache expensive operations**:
+   - Database queries with joins
+   - Aggregations and statistics
+   - External API calls
+
+2. **Use appropriate TTLs**:
+   - Frequently changing data: SHORT (5 min)
+   - Relatively static data: MEDIUM (15 min)
+   - Rarely changing data: LONG (1 hour)
+
+3. **Always invalidate on mutations**:
+   ```typescript
+   // After creating/updating/deleting
+   await onResourceCreated(id, userId)  // Uses cascade invalidation
+   ```
+
+4. **Include cache headers**:
+   ```typescript
+   return successResponse(data, {
+     headers: {
+       'Cache-Control': `public, max-age=${CACHE_DURATIONS.SHORT}`,
+       'ETag': etag,
+     }
+   })
+   ```
+
+5. **Monitor cache performance**:
+   - Check hit rate (target: >70%)
+   - Monitor memory usage
+   - Review cache size
+
+### Performance Tracking
+
+All endpoints include detailed performance metrics:
+
+```typescript
+import { startTimer } from '@/lib/logging/performance-logger'
+
+export async function GET(request: NextRequest) {
+  const timer = startTimer('operation_name')
+
+  timer.mark('validation_complete')
+  // ... validation ...
+
+  timer.mark('database_query_start')
+  // ... query ...
+  timer.mark('database_query_complete')
+
+  const duration = timer.endAndLog({ operation: 'operation_name' })
+
+  return successResponse(data, {
+    metadata: {
+      performance: {
+        validation: timer.getMark('validation_complete'),
+        database_query: timer.getMark('database_query_complete')! - timer.getMark('database_query_start')!,
+        total: duration,
+      }
+    }
+  })
+}
+```
+
+### Structured Logging
+
+Use structured logging for better observability:
+
+```typescript
+import { structuredLogger } from '@/lib/logging/structured-logger'
+
+// Info logging with context
+structuredLogger.info('Operation completed', {
+  operation: 'create_project',
+  userId: context.userId,
+  projectId: project.id,
+  duration: 123,
+})
+
+// Error logging with stack traces
+structuredLogger.error('Database error', error, {
+  operation: 'fetch_projects',
+  query: queryParams,
+})
+
+// Business event logging
+structuredLogger.logBusiness('investment_created', {
+  investmentId: investment.id,
+  amount: 50000,
+  expectedReturn: 6000,
+})
+```
+
+### Standard Endpoint Pattern
+
+All new endpoints should follow this pattern:
+
+```typescript
+import { NextRequest } from 'next/server'
+import { withMiddleware } from '@/lib/middleware'
+import { successResponse, paginatedResponse } from '@/lib/api/responses'
+import { structuredLogger } from '@/lib/logging/structured-logger'
+import { startTimer } from '@/lib/logging/performance-logger'
+import { yourSchema } from '@/lib/validation/your.schemas'
+import { RATE_LIMITS } from '@/lib/config'
+import {
+  withCache,
+  createCacheKey,
+  CACHE_DURATIONS,
+  onResourceUpdated,
+} from '@/lib/cache'
+
+// GET endpoint (with caching)
+export async function GET(request: NextRequest) {
+  return withMiddleware(
+    request,
+    async (context) => {
+      const timer = startTimer('get_resource')
+
+      // Validate query parameters
+      const { searchParams } = new URL(request.url)
+      const validated = yourSchema.parse(Object.fromEntries(searchParams))
+      timer.mark('validation_complete')
+
+      // Generate cache key
+      const cacheKey = createCacheKey(CACHE_PREFIXES.YOUR_RESOURCE, 'list', validated)
+
+      // Use cache-aside pattern
+      const data = await withCache(
+        cacheKey,
+        async () => {
+          timer.mark('database_query_start')
+          const result = await db.query(validated)
+          timer.mark('database_query_complete')
+          return result
+        },
+        { ttl: CACHE_DURATIONS.SHORT }
+      )
+
+      const duration = timer.endAndLog({ operation: 'get_resource' })
+
+      structuredLogger.info('Resource fetched', {
+        operation: 'get_resource',
+        count: data.length,
+        duration,
+      })
+
+      return paginatedResponse(data, { total, limit, offset }, {
+        requestId: context.requestId,
+        headers: {
+          'Cache-Control': `public, max-age=${CACHE_DURATIONS.SHORT}`,
+        },
+        metadata: {
+          performance: {
+            validation: timer.getMark('validation_complete'),
+            query: timer.getMark('database_query_complete')! - timer.getMark('database_query_start')!,
+            total: duration,
+          }
+        }
+      })
+    },
+    {
+      rateLimit: RATE_LIMITS.api.yourResource,
+      performanceTracking: true,
+    }
+  )
+}
+
+// POST endpoint (with cache invalidation)
+export async function POST(request: NextRequest) {
+  return withMiddleware(
+    request,
+    async (context) => {
+      const timer = startTimer('create_resource')
+
+      const body = await request.json()
+      const validated = yourSchema.parse(body)
+      timer.mark('validation_complete')
+
+      // Create resource
+      timer.mark('database_insert_start')
+      const resource = await db.create(validated)
+      timer.mark('database_insert_complete')
+
+      const duration = timer.endAndLog({ operation: 'create_resource' })
+
+      // Log business event
+      structuredLogger.logBusiness('resource_created', {
+        resourceId: resource.id,
+        userId: context.userId,
+      })
+
+      // Invalidate caches
+      timer.mark('cache_invalidation_start')
+      await onResourceCreated(resource.id, context.userId!)
+      timer.mark('cache_invalidation_complete')
+
+      return createdResponse(resource, {
+        location: `/api/resources/${resource.id}`,
+        requestId: context.requestId,
+        metadata: {
+          performance: {
+            validation: timer.getMark('validation_complete'),
+            insert: timer.getMark('database_insert_complete')! - timer.getMark('database_insert_start')!,
+            cache_invalidation: timer.getMark('cache_invalidation_complete')! - timer.getMark('cache_invalidation_start')!,
+            total: duration,
+          }
+        }
+      })
+    },
+    {
+      auth: true, // Require authentication
+      rateLimit: { maxRequests: 10, windowMs: 60000 }, // Stricter for writes
+      performanceTracking: true,
+    }
+  )
+}
+```
+
+### Migration Checklist
+
+When updating an existing endpoint to Phase 4 patterns:
+
+- [ ] Import middleware and utilities
+- [ ] Wrap handler with `withMiddleware()`
+- [ ] Add Zod validation schema
+- [ ] Add performance timer with marks
+- [ ] Replace console.log with structured logging
+- [ ] Add caching (for GET endpoints)
+- [ ] Add cache invalidation (for mutation endpoints)
+- [ ] Include performance metadata in response
+- [ ] Add proper rate limiting
+- [ ] Test with real data
+- [ ] Monitor cache hit rate
+
+### Performance Targets
+
+**Response Times**:
+- Cached GET requests: <5ms (target)
+- Uncached GET requests: <100ms (target)
+- POST/PATCH requests: <200ms (target)
+
+**Cache Performance**:
+- Hit rate: >70% (after warmup)
+- Memory usage: <100MB total
+- Eviction rate: <10%
+
+**Database**:
+- Query time: <50ms (p95)
+- Connection pool: <80% utilization
+
+---
+
 ## 🎉 You're Ready!
 
 Welcome to the team! If you have any questions, don't hesitate to ask.
@@ -832,4 +1235,4 @@ Welcome to the team! If you have any questions, don't hesitate to ask.
 
 ---
 
-_Last updated: 2025-11-15_
+_Last updated: 2025-11-16_
