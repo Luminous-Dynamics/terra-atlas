@@ -20,6 +20,46 @@ Authorization: Bearer <your-jwt-token>
 Content-Type: application/json
 ```
 
+### Response Headers
+
+All API responses include standard headers for tracking and caching:
+
+**Request Tracking:**
+- `X-Request-ID` - Unique identifier for request tracing (UUID format)
+- `X-Response-Time` - Server processing time in milliseconds
+
+**Cache Headers (cached endpoints only):**
+- `Cache-Control` - Browser/CDN caching directives (e.g., `public, max-age=300`)
+- `X-Cache-Key` - Internal cache key used (for debugging)
+- `ETag` - Resource version identifier for conditional requests
+
+**Example Response Headers:**
+```http
+X-Request-ID: 550e8400-e29b-41d4-a716-446655440000
+X-Response-Time: 45ms
+Cache-Control: public, max-age=300
+X-Cache-Key: projects:list:{"type":"solar"}
+ETag: "a1b2c3d4e5f6"
+```
+
+### Conditional Requests
+
+Cached endpoints support conditional requests to reduce bandwidth:
+
+**If-None-Match Header:**
+```http
+GET /api/projects/uuid
+If-None-Match: "a1b2c3d4e5f6"
+```
+
+If content hasn't changed, returns `304 Not Modified` with empty body.
+
+**If-Modified-Since Header:**
+```http
+GET /api/projects/uuid
+If-Modified-Since: Mon, 15 Jan 2025 12:00:00 GMT
+```
+
 ### Rate Limiting
 
 All endpoints are rate-limited to prevent abuse:
@@ -399,6 +439,153 @@ Stripe webhook endpoint for payment events.
 - `payment_intent.succeeded` - Payment completed successfully
 - `payment_intent.failed` - Payment failed
 - `checkout.session.completed` - Checkout session completed
+
+---
+
+## Admin Endpoints
+
+### GET /api/admin/cache
+
+Get detailed cache statistics and performance metrics.
+
+**Authentication:** Required
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "stats": {
+      "size": 127,
+      "hits": 1523,
+      "misses": 234,
+      "hitRate": "86.69%",
+      "evictions": 12,
+      "expirations": 45,
+      "memoryUsageMB": "2.45"
+    },
+    "distribution": {
+      "projects": 45,
+      "stats": 12,
+      "investments": 23,
+      "portfolio": 34,
+      "user": 13
+    },
+    "totalKeys": 127,
+    "sampleEntries": [
+      {
+        "key": "projects:list:{\"type\":\"solar\"}",
+        "createdAt": "2025-01-15T12:00:00.000Z",
+        "expiresAt": "2025-01-15T12:05:00.000Z",
+        "hits": 23,
+        "sizBytes": 15234,
+        "tags": ["projects", "list"]
+      }
+    ],
+    "recommendations": [
+      "EXCELLENT HIT RATE: Cache is performing very well, consider extending TTLs further"
+    ]
+  }
+}
+```
+
+---
+
+### POST /api/admin/cache
+
+Perform cache management operations.
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "operation": "clear_pattern",
+  "pattern": "projects:*"
+}
+```
+
+**Operations:**
+
+1. **Clear All Cache**
+```json
+{
+  "operation": "clear_all"
+}
+```
+
+2. **Clear by Pattern**
+```json
+{
+  "operation": "clear_pattern",
+  "pattern": "projects:*"
+}
+```
+
+3. **Clear by Tags**
+```json
+{
+  "operation": "clear_tags",
+  "tags": ["projects", "stats"]
+}
+```
+
+4. **Warm Cache**
+```json
+{
+  "operation": "warm",
+  "entries": [
+    {
+      "key": "projects:featured",
+      "value": { /* data */ },
+      "ttl": 3600
+    }
+  ]
+}
+```
+
+5. **Reset Statistics**
+```json
+{
+  "operation": "reset_stats"
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "cleared": true,
+    "pattern": "projects:*",
+    "count": 45
+  }
+}
+```
+
+**Errors:**
+- `400` - Invalid operation or missing parameters
+- `401` - Not authenticated
+- `429` - Rate limit exceeded
+
+---
+
+### DELETE /api/admin/cache
+
+Clear entire cache (alternative to POST with operation=clear_all).
+
+**Authentication:** Required
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "cleared": true,
+    "message": "All cache entries cleared"
+  }
+}
+```
 
 ---
 
