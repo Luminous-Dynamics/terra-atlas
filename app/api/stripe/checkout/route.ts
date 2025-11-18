@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import logger from '@/lib/logger'
 
 // Check if we're in demo mode (no real Stripe keys)
 const isDemoMode = !process.env.STRIPE_SECRET_KEY || 
@@ -8,7 +9,7 @@ const isDemoMode = !process.env.STRIPE_SECRET_KEY ||
 
 // Initialize Stripe only if not in demo mode
 const stripe = !isDemoMode ? new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-08-27.basil',
 }) : null
 
 export async function POST(req: NextRequest) {
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
     })
     
   } catch (error) {
-    console.error('Stripe checkout error:', error)
+    logger.error('Stripe checkout error', error)
     return NextResponse.json(
       { error: 'Failed to create checkout session' },
       { status: 500 }
@@ -134,7 +135,7 @@ export async function GET(req: NextRequest) {
     })
     
   } catch (error) {
-    console.error('Error retrieving session:', error)
+    logger.error('Error retrieving Stripe session', error)
     return NextResponse.json(
       { error: 'Failed to retrieve session' },
       { status: 500 }

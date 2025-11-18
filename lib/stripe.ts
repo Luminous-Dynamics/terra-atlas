@@ -1,11 +1,11 @@
 import Stripe from 'stripe'
+import { requireServerEnv } from './env.server'
 
 // Server-side Stripe instance
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY || ''
+const stripeSecretKey = requireServerEnv('STRIPE_SECRET_KEY')
 
-// Don't throw during build time, only at runtime when actually used
-export const stripe = new Stripe(stripeSecretKey || 'sk_test_demo', {
-  apiVersion: '2024-12-18.acacia',
+export const stripe = new Stripe(stripeSecretKey, {
+  apiVersion: '2025-08-27.basil',
   typescript: true,
 })
 

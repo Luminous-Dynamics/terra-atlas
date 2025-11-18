@@ -2,19 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
+import { requireServerEnv, serverEnv } from '@/lib/env.server'
+import logger from '@/lib/logger'
 
 // Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+const supabaseUrl = serverEnv.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = requireServerEnv('SUPABASE_SERVICE_ROLE_KEY')
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
 // Stripe webhook secret for verifying the webhook signature
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || ''
+const webhookSecret = requireServerEnv('STRIPE_WEBHOOK_SECRET')
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text()
-    const signature = headers().get('stripe-signature')
+    const headersList = await headers()
+    const signature = headersList.get('stripe-signature')
 
     if (!signature) {
       return NextResponse.json(
@@ -28,7 +31,7 @@ export async function POST(request: NextRequest) {
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
     } catch (err: any) {
-      console.error('Webhook signature verification failed:', err.message)
+      logger.error('Webhook signature verification failed', err)
       return NextResponse.json(
         { error: 'Invalid signature' },
         { status: 400 }
@@ -39,10 +42,10 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object as any
-        console.log('Payment succeeded:', paymentIntent.id)
+        logger.info({ message: 'Payment succeeded', context: { paymentIntentId: paymentIntent.id } })
         
         // Update investment record status if needed
-        await supabase
+        await supabaseAdmin
           .from('investments')
           .update({ 
             payment_status: 'completed',
@@ -56,10 +59,10 @@ export async function POST(request: NextRequest) {
 
       case 'payment_intent.payment_failed': {
         const paymentIntent = event.data.object as any
-        console.log('Payment failed:', paymentIntent.id)
+        logger.warn({ message: 'Payment failed', context: { paymentIntentId: paymentIntent.id } })
         
         // Update investment record with failure
-        await supabase
+        await supabaseAdmin
           .from('investments')
           .update({ 
             payment_status: 'failed',
@@ -74,10 +77,10 @@ export async function POST(request: NextRequest) {
 
       case 'charge.refunded': {
         const charge = event.data.object as any
-        console.log('Charge refunded:', charge.id)
+        logger.info({ message: 'Charge refunded', context: { chargeId: charge.id } })
         
         // Handle refund - update investment record
-        await supabase
+        await supabaseAdmin
           .from('investments')
           .update({ 
             payment_status: 'refunded',
@@ -92,10 +95,10 @@ export async function POST(request: NextRequest) {
       case 'customer.subscription.created': {
         // Handle subscription creation for recurring investments
         const subscription = event.data.object as any
-        console.log('Subscription created:', subscription.id)
+        logger.info({ message: 'Subscription created', context: { subscriptionId: subscription.id } })
         
         // Create subscription record
-        await supabase
+        await supabaseAdmin
           .from('investment_subscriptions')
           .insert([{
             stripe_subscription_id: subscription.id,
@@ -112,10 +115,10 @@ export async function POST(request: NextRequest) {
       case 'customer.subscription.deleted': {
         // Handle subscription cancellation
         const subscription = event.data.object as any
-        console.log('Subscription cancelled:', subscription.id)
+        logger.warn({ message: 'Subscription cancelled', context: { subscriptionId: subscription.id } })
         
         // Update subscription record
-        await supabase
+        await supabaseAdmin
           .from('investment_subscriptions')
           .update({ 
             status: 'cancelled',
@@ -129,11 +132,11 @@ export async function POST(request: NextRequest) {
       case 'invoice.payment_succeeded': {
         // Handle successful recurring payment
         const invoice = event.data.object as any
-        console.log('Invoice paid:', invoice.id)
+        logger.info({ message: 'Invoice paid', context: { invoiceId: invoice.id } })
         
         // Record recurring payment
         if (invoice.subscription) {
-          await supabase
+          await supabaseAdmin
             .from('recurring_payments')
             .insert([{
               stripe_invoice_id: invoice.id,
@@ -147,13 +150,13 @@ export async function POST(request: NextRequest) {
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`)
+        logger.warn({ message: 'Unhandled Stripe event type', context: { eventType: event.type } })
     }
 
     // Return success response
     return NextResponse.json({ received: true })
   } catch (error: any) {
-    console.error('Webhook error:', error)
+    logger.error('Stripe webhook error', error)
     return NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 500 }
