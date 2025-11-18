@@ -1,23 +1,27 @@
 import { NextResponse } from 'next/server'
-import Database from 'better-sqlite3'
-import path from 'path'
+import logger from '@/lib/logger'
+import { db } from '@/lib/drizzle/db'
+import { energyProjects } from '@/lib/drizzle/schema-energy'
+import { and, desc, eq, gte, lte, sql } from 'drizzle-orm'
 
-function convertToCSV(data: any[], columns: string[]): string {
+function convertToCSV(data: Record<string, unknown>[], columns: string[]): string {
   // Create header row
   const header = columns.join(',')
-  
+
   // Create data rows
-  const rows = data.map(row => {
-    return columns.map(col => {
-      const value = row[col]
-      // Handle values that contain commas or quotes
-      if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
-        return `"${value.replace(/"/g, '""')}"`
-      }
-      return value ?? ''
-    }).join(',')
+  const rows = data.map((row) => {
+    return columns
+      .map((col) => {
+        const value = row[col]
+        // Handle values that contain commas or quotes
+        if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+          return `"${value.replace(/"/g, '""')}"`
+        }
+        return value ?? ''
+      })
+      .join(',')
   })
-  
+
   return [header, ...rows].join('\n')
 }
 
@@ -30,101 +34,169 @@ export async function GET(request: Request) {
   const status = searchParams.get('status')
   const minCapacity = searchParams.get('minCapacity')
   const maxCapacity = searchParams.get('maxCapacity')
-  
+  const metricParam = searchParams.get('metric') || 'capacity_mw'
+  const allowedMetrics = new Set(['capacity_mw', 'investment', 'jobs_created'])
+
   try {
-    const db = new Database(path.join(process.cwd(), 'data', 'terra-atlas-local.db'), { readonly: true })
-    
-    // Build query based on dataset
-    let sql = ''
-    let params: any[] = []
+    let data: Record<string, unknown>[] = []
     let columns: string[] = []
-    
+
     switch (dataset) {
-      case 'projects':
-        sql = 'SELECT * FROM projects WHERE 1=1'
-        columns = ['id', 'name', 'type', 'developer', 'owner', 'state', 'country', 
-                   'latitude', 'longitude', 'status', 'capacity_mw', 'annual_generation_gwh',
-                   'investment', 'jobs_created', 'co2_offset_tons', 'completion_date']
-        
-        // Apply filters
-        if (type) {
-          sql += ' AND type = ?'
-          params.push(type)
-        }
-        if (status) {
-          sql += ' AND status = ?'
-          params.push(status)
-        }
-        if (minCapacity) {
-          sql += ' AND capacity_mw >= ?'
-          params.push(parseFloat(minCapacity))
-        }
-        if (maxCapacity) {
-          sql += ' AND capacity_mw <= ?'
-          params.push(parseFloat(maxCapacity))
-        }
-        
-        sql += ' ORDER BY capacity_mw DESC LIMIT ?'
-        params.push(limit)
+      case 'projects': {
+        const conditions = []
+
+        if (type) conditions.push(eq(energyProjects.projectType, type))
+        if (status) conditions.push(eq(energyProjects.status, status))
+        if (minCapacity) conditions.push(gte(energyProjects.capacityMw, minCapacity))
+        if (maxCapacity) conditions.push(lte(energyProjects.capacityMw, maxCapacity))
+
+        const whereClause = conditions.length ? and(...conditions) : undefined
+
+        const results = await db
+          .select({
+            id: energyProjects.id,
+            name: energyProjects.name,
+            type: energyProjects.projectType,
+            developer: energyProjects.developer,
+            owner: energyProjects.owner,
+            state: energyProjects.state,
+            country: energyProjects.country,
+            latitude: energyProjects.latitude,
+            longitude: energyProjects.longitude,
+            status: energyProjects.status,
+            capacity_mw: energyProjects.capacityMw,
+            annual_generation_gwh: energyProjects.annualGenerationGwh,
+            investment: energyProjects.totalCostMillion,
+            co2_offset_tons: energyProjects.co2AvoidedTonsYear,
+          })
+          .from(energyProjects)
+          .where(whereClause)
+          .orderBy(desc(energyProjects.capacityMw))
+          .limit(limit)
+
+        data = results as Record<string, unknown>[]
+        columns = [
+          'id',
+          'name',
+          'type',
+          'developer',
+          'owner',
+          'state',
+          'country',
+          'latitude',
+          'longitude',
+          'status',
+          'capacity_mw',
+          'annual_generation_gwh',
+          'investment',
+          'co2_offset_tons',
+        ]
         break
-        
-      case 'statistics':
-        // Export aggregated statistics
-        sql = `
-          SELECT 
-            type,
-            COUNT(*) as project_count,
-            SUM(capacity_mw) as total_capacity_mw,
-            AVG(capacity_mw) as avg_capacity_mw,
-            SUM(investment) as total_investment,
-            SUM(jobs_created) as total_jobs,
-            SUM(co2_offset_tons) as total_co2_offset
-          FROM projects
-          GROUP BY type
-        `
-        columns = ['type', 'project_count', 'total_capacity_mw', 'avg_capacity_mw', 
-                   'total_investment', 'total_jobs', 'total_co2_offset']
+      }
+
+      case 'statistics': {
+        // Export aggregated statistics by type
+        const statsResults = await db.execute(sql`
+          SELECT
+            project_type as type,
+            COUNT(*)::int as project_count,
+            COALESCE(SUM(capacity_mw)::float, 0) as total_capacity_mw,
+            COALESCE(AVG(capacity_mw)::float, 0) as avg_capacity_mw,
+            COALESCE(SUM(total_cost_million)::float, 0) as total_investment,
+            COALESCE(SUM(co2_avoided_tons_year)::float, 0) as total_co2_offset
+          FROM energy_projects
+          WHERE project_type IS NOT NULL
+          GROUP BY project_type
+          ORDER BY project_count DESC
+        `)
+
+        data = statsResults.rows as Record<string, unknown>[]
+        columns = [
+          'type',
+          'project_count',
+          'total_capacity_mw',
+          'avg_capacity_mw',
+          'total_investment',
+          'total_co2_offset',
+        ]
         break
-        
-      case 'summary':
+      }
+
+      case 'summary': {
         // Export state-by-state summary
-        sql = `
-          SELECT 
+        const summaryResults = await db.execute(sql`
+          SELECT
             state,
             country,
-            COUNT(*) as project_count,
-            COUNT(DISTINCT type) as technology_types,
-            SUM(capacity_mw) as total_capacity_mw,
-            SUM(investment) as total_investment,
-            SUM(jobs_created) as total_jobs,
-            AVG(CAST(REPLACE(REPLACE(completion_date, '%', ''), ' complete', '') AS REAL)) as avg_completion
-          FROM projects
+            COUNT(*)::int as project_count,
+            COUNT(DISTINCT project_type)::int as technology_types,
+            COALESCE(SUM(capacity_mw)::float, 0) as total_capacity_mw,
+            COALESCE(SUM(total_cost_million)::float, 0) as total_investment,
+            COALESCE(SUM(co2_avoided_tons_year)::float, 0) as total_co2_offset
+          FROM energy_projects
+          WHERE state IS NOT NULL
           GROUP BY state, country
           ORDER BY total_capacity_mw DESC
-          LIMIT ?
-        `
-        params.push(limit)
-        columns = ['state', 'country', 'project_count', 'technology_types', 
-                   'total_capacity_mw', 'total_investment', 'total_jobs', 'avg_completion']
+          LIMIT ${limit}
+        `)
+
+        data = summaryResults.rows as Record<string, unknown>[]
+        columns = [
+          'state',
+          'country',
+          'project_count',
+          'technology_types',
+          'total_capacity_mw',
+          'total_investment',
+          'total_co2_offset',
+        ]
         break
-        
-      case 'top-projects':
-        // Export top projects by various metrics
-        const metric = searchParams.get('metric') || 'capacity_mw'
-        sql = `SELECT * FROM projects ORDER BY ${metric} DESC LIMIT ?`
-        params.push(Math.min(limit, 100))
-        columns = ['id', 'name', 'type', 'developer', 'state', 'country',
-                   'capacity_mw', 'investment', 'jobs_created', 'status']
+      }
+
+      case 'top-projects': {
+        const metric = allowedMetrics.has(metricParam) ? metricParam : 'capacity_mw'
+        const orderColumn =
+          metric === 'capacity_mw'
+            ? energyProjects.capacityMw
+            : metric === 'investment'
+              ? energyProjects.totalCostMillion
+              : energyProjects.capacityMw
+
+        const topResults = await db
+          .select({
+            id: energyProjects.id,
+            name: energyProjects.name,
+            type: energyProjects.projectType,
+            developer: energyProjects.developer,
+            state: energyProjects.state,
+            country: energyProjects.country,
+            capacity_mw: energyProjects.capacityMw,
+            investment: energyProjects.totalCostMillion,
+            status: energyProjects.status,
+          })
+          .from(energyProjects)
+          .orderBy(desc(orderColumn))
+          .limit(Math.min(limit, 100))
+
+        data = topResults as Record<string, unknown>[]
+        columns = [
+          'id',
+          'name',
+          'type',
+          'developer',
+          'state',
+          'country',
+          'capacity_mw',
+          'investment',
+          'status',
+        ]
         break
-        
+      }
+
       default:
-        db.close()
         return NextResponse.json({ error: 'Invalid dataset' }, { status: 400 })
     }
-    
-    const data = db.prepare(sql).all(...params)
-    db.close()
-    
+
     // Format based on requested format
     if (format === 'json') {
       return NextResponse.json({
@@ -132,26 +204,28 @@ export async function GET(request: Request) {
         timestamp: new Date().toISOString(),
         count: data.length,
         filters: { type, status, minCapacity, maxCapacity },
-        data
+        data,
       })
     } else if (format === 'csv') {
       const csv = convertToCSV(data, columns)
-      
+
       return new NextResponse(csv, {
         headers: {
           'Content-Type': 'text/csv',
-          'Content-Disposition': `attachment; filename="terra-atlas-${dataset}-${Date.now()}.csv"`
-        }
+          'Content-Disposition': `attachment; filename="terra-atlas-${dataset}-${Date.now()}.csv"`,
+        },
       })
     } else {
       return NextResponse.json({ error: 'Invalid format. Use csv or json' }, { status: 400 })
     }
-    
   } catch (error) {
-    console.error('Export error:', error)
-    return NextResponse.json({ 
-      error: 'Export failed',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    logger.error('Export error', error)
+    return NextResponse.json(
+      {
+        error: 'Export failed',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    )
   }
 }

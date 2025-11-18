@@ -1,81 +1,72 @@
-import { NextResponse } from 'next/server'
-import Database from 'better-sqlite3'
-import path from 'path'
+import { NextRequest, NextResponse } from 'next/server'
+import logger from '@/lib/logger'
+import { db } from '@/lib/drizzle/db'
+import { energyProjects } from '@/lib/drizzle/schema-energy'
+import { eq } from 'drizzle-orm'
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const db = new Database(path.join(process.cwd(), 'data', 'terra-atlas-local.db'), { readonly: true })
-    
-    // Get single project by ID with mapped column names
-    const query = `SELECT 
-      id,
-      project_name as name,
-      project_type as type,
-      developer,
-      owner_type,
-      state,
-      county,
-      region,
-      state as country,
-      latitude,
-      longitude,
-      capacity_mw,
-      energy_source,
-      technology_type,
-      status,
-      operational,
-      construction_start,
-      commercial_operation,
-      year_completed,
-      total_cost as investment,
-      total_cost as investment_needed,
-      cost_per_kw,
-      annual_revenue_potential,
-      payback_period_years,
-      levelized_cost_per_mwh,
-      interconnection_status,
-      transmission_owner,
-      point_of_interconnection,
-      interconnection_cost,
-      grid_connection_voltage_kv,
-      carbon_avoided_tons_per_year as co2_saved_annual,
-      environmental_score,
-      community_support_score,
-      technical_feasibility_score,
-      overall_viability_score,
-      jobs_created,
-      data_source,
-      last_updated
-    FROM projects WHERE id = ?`
-    
-    const project = db.prepare(query).get(params.id)
-    
-    db.close()
-    
+    const { id } = await params
+
+    // Get single project by ID
+    const [project] = await db
+      .select({
+        id: energyProjects.id,
+        name: energyProjects.name,
+        type: energyProjects.projectType,
+        developer: energyProjects.developer,
+        owner_type: energyProjects.owner,
+        state: energyProjects.state,
+        county: energyProjects.city,
+        region: energyProjects.state,
+        country: energyProjects.country,
+        latitude: energyProjects.latitude,
+        longitude: energyProjects.longitude,
+        capacity_mw: energyProjects.capacityMw,
+        energy_source: energyProjects.projectType,
+        technology_type: energyProjects.subType,
+        status: energyProjects.status,
+        operational: energyProjects.status,
+        year_completed: energyProjects.codDate,
+        investment: energyProjects.totalCostMillion,
+        investment_needed: energyProjects.totalCostMillion,
+        annual_revenue_potential: energyProjects.annualGenerationGwh,
+        co2_saved_annual: energyProjects.co2AvoidedTonsYear,
+        expected_irr: energyProjects.expectedIrr,
+        created_at: energyProjects.createdAt,
+      })
+      .from(energyProjects)
+      .where(eq(energyProjects.id, id))
+      .limit(1)
+
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
-    
+
     // Add calculated fields
+    const capacityMw = Number(project.capacity_mw) || 0
+    const investmentNeeded = Number(project.investment_needed) || 0
+    const expectedIrr = Number(project.expected_irr) || (project.type === 'Solar' ? 12 : 11)
+
     const enhancedProject = {
       ...project,
-      investment_raised: project.investment_needed * 0.35, // 35% raised
+      investment_raised: investmentNeeded * 0.35, // 35% raised
       min_investment: 100,
-      irr: project.type === 'Solar' ? 12 : 11,
-      roi_percentage: project.type === 'Solar' ? 12 : 11,
-      completion_date: project.year_completed ? `${project.year_completed}-Q3` : '2027-Q3',
+      irr: expectedIrr,
+      roi_percentage: expectedIrr,
+      completion_date: project.year_completed ? `${project.year_completed}` : '2027-Q3',
       power_offtaker: 'Regional Utility Co.',
-      total_homes_powered: Math.round(project.capacity_mw * 750),
-      location: `${project.state}, USA`,
-      description: `This ${project.capacity_mw} MW ${project.type || 'energy'} project represents a significant advancement in renewable energy infrastructure for ${project.state}.`
+      total_homes_powered: Math.round(capacityMw * 750),
+      location: project.state ? `${project.state}, ${project.country || 'USA'}` : 'United States',
+      description: `This ${capacityMw} MW ${project.type || 'energy'} project represents a significant advancement in renewable energy infrastructure for ${project.state || 'the region'}.`,
     }
-    
+
     return NextResponse.json(enhancedProject)
   } catch (error) {
-    console.error('Error fetching project:', error)
+    logger.error('Error fetching project:', error)
     return NextResponse.json({ error: 'Failed to fetch project' }, { status: 500 })
   }
 }
