@@ -2,10 +2,21 @@
   "name": "terra-atlas-mvp",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
+    "dev:clean": "rm -rf .next && next dev",
+    "dev:fresh": "rm -rf .next node_modules/.cache && npm run dev",
     "build": "next build",
     "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run lint && npm run typecheck && npm run test",
+    "telemetry:report": "node scripts/analyze-telemetry.mjs",
     "db:generate": "drizzle-kit generate:pg",
     "db:push": "drizzle-kit push:pg",
     "db:studio": "drizzle-kit studio",
@@ -21,7 +32,6 @@
     "@types/three": "^0.180.0",
     "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",
-    "better-sqlite3": "^12.4.1",
     "clsx": "^2.1.1",
     "csv-parse": "^6.1.0",
     "date-fns": "^4.1.0",
@@ -39,8 +49,6 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "recharts": "^3.2.0",
-    "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7",
     "stripe": "^18.5.0",
     "swr": "^2.3.6",
     "tailwind-merge": "^3.3.1",
@@ -56,7 +64,10 @@
     "@types/react-dom": "^19",
     "eslint-config-next": "^15.5.3",
     "playwright": "^1.55.1",
+    "rimraf": "^6.0.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsup": "^8.3.0",
+    "typescript": "^5",
+    "vitest": "^2.1.4"
   }
 }
