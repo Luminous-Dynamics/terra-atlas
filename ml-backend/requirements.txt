@@ -1,14 +1,14 @@
 # Core ML and Data Processing
-numpy>=1.24.0
+numpy>=2.4.2
 pandas>=2.0.0
-scikit-learn>=1.3.0
-torch>=2.0.0
-torchvision>=0.15.0
+scikit-learn>=1.8.0
+torch>=2.10.0
+torchvision>=0.25.0
 
 # Web Framework
-fastapi>=0.104.0
-uvicorn>=0.24.0
-python-multipart>=0.0.6
+fastapi>=0.128.0
+uvicorn>=0.40.0
+python-multipart>=0.0.22
 pydantic>=2.0.0
 
 # Database
@@ -18,7 +18,7 @@ asyncpg>=0.29.0
 
 # Image Processing & Earth Observation
 rasterio>=1.3.0
-pillow>=10.0.0
+pillow>=12.1.0
 opencv-python>=4.8.0
 earthengine-api>=0.1.380
 sentinelhub>=3.9.0
@@ -30,8 +30,8 @@ pyproj>=3.6.0  # Coordinate transformations
 
 # API & Data
 httpx>=0.25.0
-aiohttp>=3.9.0
-requests>=2.31.0
+aiohttp>=3.13.3
+requests>=2.32.5
 
 # Utilities
 python-dotenv>=1.0.0
