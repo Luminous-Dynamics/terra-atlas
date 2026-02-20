@@ -46,33 +46,28 @@ export const useUSACEDams = (limit: number = 100) => {
     const fetchDams = async () => {
       try {
         setLoading(true);
-        
-        // Try to fetch from ML backend first
-        const mlBackendUrl = process.env.NEXT_PUBLIC_ML_BACKEND_URL || 'http://localhost:8001';
-        
-        try {
-          const response = await fetch(`${mlBackendUrl}/usace/dams?limit=${limit}`);
-          if (response.ok) {
-            const data = await response.json();
-            setDams(data.dams || []);
-            setStatistics(data.statistics || null);
-            setError(null);
-            return;
-          }
-        } catch (apiError) {
-          console.log('ML backend not available, using mock data');
+
+        // Fetch from our USACE API route (backed by real USACE NID data)
+        const response = await fetch(`/api/usace/dams?limit=${limit}`);
+        if (response.ok) {
+          const data = await response.json();
+          setDams(data.dams || []);
+          setStatistics(data.statistics || null);
+          setError(null);
+          return;
         }
 
-        // Fallback to mock data
+        // API returned error — fall back to mock data
+        console.warn(`USACE API returned ${response.status}, using mock data`);
         const mockDams = generateMockUSACEDams(limit);
         setDams(mockDams);
         setStatistics(calculateStatistics(mockDams));
         setError(null);
-        
+
       } catch (err) {
         console.error('Error fetching USACE dams:', err);
         setError('Failed to load USACE dam data');
-        
+
         // Still provide some mock data for demo
         const mockDams = generateMockUSACEDams(20);
         setDams(mockDams);
